@@ -38,12 +38,15 @@ const UserSchema = new Schema({
 		type: Boolean,
 		default: false
 	},
-	follow: [{
+	follows: [{
 		user_id: {
 			type: Schema.Types.ObjectId,
 			ref: 'User',
 		},
-		receive_notification: Boolean
+		receive_notification: {
+			type: Boolean,
+			default: false
+		}
 	}]
 }, { timestamps: true });
 
