@@ -4,20 +4,20 @@ const Schema = mongoose.Schema;
 const UserSchema = new Schema({
 	email: {
 		type: String,
-		unique: true, 
+		unique: true,
 		required: true
 	},
 	username: {
 		type: String,
-		unique: true,  
-		required: true 
+		unique: true,
+		required: true
 	},
 	fullname: {
 		type: String
 	},
 	password: {
 		type: String,
-		required: true 
+		required: true
 	},
 	profile_picture: {
 		type: String,
@@ -34,6 +34,10 @@ const UserSchema = new Schema({
 		title: String,
 		link: String
 	}],
+	verified: {
+		type: Boolean,
+		default: false
+	},
 	follow: [{
 		user_id: {
 			type: Schema.Types.ObjectId,
