@@ -39,11 +39,11 @@ const UserSchema = new Schema({
 		default: false
 	},
 	follows: [{
-		user_id: {
+		userId: {
 			type: Schema.Types.ObjectId,
 			ref: 'User',
 		},
-		receive_notification: {
+		receiveNotification: {
 			type: Boolean,
 			default: false
 		}

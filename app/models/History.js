@@ -3,12 +3,12 @@ const Mongoose = require('mongoose');
 const { Schema } = Mongoose;
 
 const HistorySchema = new Schema({
-	user_id: {
+	userId: {
 		type: Schema.Types.ObjectId,
 		ref: 'User',
 		required: true
 	},
-	stream_id: {
+	streamId: {
 		type: Schema.Types.ObjectId,
 		ref: 'Stream',
 		required: true

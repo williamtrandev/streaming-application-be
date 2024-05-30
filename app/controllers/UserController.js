@@ -10,7 +10,7 @@ class UserController {
 			const userId = req.user.userId; 
 			const updatedUser = await User.findByIdAndUpdate(
 				userId,
-				{ $push: { follows: { user_id: followId } } },
+				{ $push: { follows: { userId: followId } } },
 				{ new: true }
 			);
 
