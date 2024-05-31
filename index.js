@@ -36,9 +36,15 @@ const io = socket(server, {
 		credentials: true
 	}
 })
+const rooms = {};
 io.on("connection", (socket) => {
 	global.chatSocket = socket;
-	socket.on("add-user", (userId) => {
-		onlineUsers.set(userId, socket.id);
+	socket.on("add-user", (streamId, userId) => {
+		if(!rooms[streamId]) {
+			rooms[streamId] = new Set();
+		}
+		rooms[streamId].add(userId);
+		console.log("User joined");
+		console.log(rooms);
 	});
 })
