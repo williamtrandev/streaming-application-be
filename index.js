@@ -4,6 +4,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const multer = require("multer");
 const morgan = require("morgan");
+const path = require("path");
 const socket = require("socket.io");
 
 const route = require('./routes');
@@ -14,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
 app.use(morgan('dev'));
+app.use(express.static(path.join(__dirname, "public")));
 
 route(app);
 
