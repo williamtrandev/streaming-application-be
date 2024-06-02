@@ -19,11 +19,11 @@ const UserSchema = new Schema({
 		type: String,
 		required: true
 	},
-	profile_picture: {
+	profilePicture: {
 		type: String,
 		default: 'user.jpg'
 	},
-	profile_banner: {
+	profileBanner: {
 		type: String,
 		default: 'user.jpg'
 	},
@@ -39,11 +39,11 @@ const UserSchema = new Schema({
 		default: false
 	},
 	follows: [{
-		user_id: {
+		user: {
 			type: Schema.Types.ObjectId,
 			ref: 'User',
 		},
-		receive_notification: {
+		receiveNotification: {
 			type: Boolean,
 			default: false
 		}

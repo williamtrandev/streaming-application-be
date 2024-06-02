@@ -65,8 +65,13 @@ class AuthController {
 			const match = await bcrypt.compare(password, user.password);
 			if (match) {
 				const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-				res.cookie('access-token', token, { maxAge: 60 * 60 * 1000, httpOnly: false });
-				return res.status(200).json({ success: 'Login successfully' });
+				return res.status(200).json({ 
+					user: {
+						userId: user._id,
+						username: user.username
+					},
+					accessToken: token
+				});
 			} else {
 				return res.status(401).json({ message: "Invalid email or password" });
 			}
