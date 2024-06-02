@@ -1,9 +1,14 @@
+const express = require('express');
 const authRouter = require('./auth');
 const userRouter = require('./user');
+const chatRouter = require('./chat');
 
 function route(app) {
-	app.use('/', authRouter);
-	app.use('/user', userRouter);
+	const apiRouter = express.Router();
+	apiRouter.use('/auth/', authRouter);
+	apiRouter.use('/user/', userRouter);
+	apiRouter.use('/chat/', chatRouter);
+	app.use('/api/v1/', apiRouter);
 	app.use(function (req, res, next) {
 		res.status(400).json({
 			title: 'Trang không tìm thấy',

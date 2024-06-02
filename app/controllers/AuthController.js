@@ -68,11 +68,13 @@ class AuthController {
 				}
 
 				const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-				res.cookie('access-token', token, { maxAge: 60 * 60 * 1000, httpOnly: false });
-				return res.status(200).json({
-					success: 'Login successfully',
-					token: token,
-					verified: user.verified
+				return res.status(200).json({ 
+					user: {
+						userId: user._id,
+						username: user.username,
+            verified: user.verified
+					},
+					accessToken: token
 				});
 			} else {
 				return res.status(401).json({ message: "Incorrect username or password" });

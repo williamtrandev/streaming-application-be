@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const StreamSchema = new Schema({
-	user_id: {
+	user: {
 		type: Schema.Types.ObjectId,
 		ref: 'User',
 		required: true
@@ -16,7 +16,7 @@ const StreamSchema = new Schema({
 		type: String,
 		trim: true
 	},
-	date_stream: {
+	dateStream: {
 		type: Date,
 		required: true
 	},
@@ -24,11 +24,11 @@ const StreamSchema = new Schema({
 		type: Number, 
 		default: 0
 	},
-	num_views_live: {
+	numViewsLive: {
 		type: Number,
 		default: 0
 	},
-	num_views: {
+	numViews: {
 		type: Number,
 		default: 0
 	},

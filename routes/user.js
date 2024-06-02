@@ -9,4 +9,6 @@ router.put('/change-profile-picture', verifyToken, uploadProfilePicture.single('
 router.put('/change-profile-banner', verifyToken, uploadProfileBanner.single('file'), userController.changeProfileBanner);
 router.put('/change-display-name', verifyToken, userController.changeDisplayName);
 
+router.post('/follow', verifyToken, userController.follow);
+
 module.exports = router;
