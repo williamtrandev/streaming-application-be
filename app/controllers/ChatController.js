@@ -8,8 +8,8 @@ class ChatController {
 				return res.status(400).json({ message: 'Please provide userId, streamId, duration and content' });
 			}
 			const data = await Chat.create({
-				userId: userId,
-				streamId: streamId,
+				user: userId,
+				stream: streamId,
 				duration: duration,
 				content: content
 			});
@@ -18,6 +18,33 @@ class ChatController {
 			}
 			return res.status(200).json({ msg: "Send message successfully" });
 		} catch(error) {
+			return res.status(500).json({ error: error.message });
+		}
+	}
+
+	async getAllMessages(req, res, next) {
+		try {
+			const { streamId } = req.params;
+			const { limit } = req.query;
+			var query = Chat.find({ stream: streamId });
+			if (limit) {
+				query = query.limit(limit);
+			}
+			const messages = await query
+				.populate({
+					path: 'user',
+					select: '_id username email fullname profilePicture'
+				})
+				// .populate({
+				// 	path: 'streamId',
+				// 	select: 'title description dateStream',
+				// 	as: 'stream'
+				// })
+				.exec();
+			return res.json({
+				messages: messages
+			})
+		} catch (error) {
 			return res.status(500).json({ error: error.message });
 		}
 	}

@@ -19,11 +19,11 @@ const UserSchema = new Schema({
 		type: String,
 		required: true
 	},
-	profile_picture: {
+	profilePicture: {
 		type: String,
 		default: 'user.jpg'
 	},
-	profile_banner: {
+	profileBanner: {
 		type: String,
 		default: 'user.jpg'
 	},
@@ -39,7 +39,7 @@ const UserSchema = new Schema({
 		default: false
 	},
 	follows: [{
-		userId: {
+		user: {
 			type: Schema.Types.ObjectId,
 			ref: 'User',
 		},
