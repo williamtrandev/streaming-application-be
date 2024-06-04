@@ -2,12 +2,14 @@ const express = require('express');
 const authRouter = require('./auth');
 const userRouter = require('./user');
 const chatRouter = require('./chat');
+const studioRouter = require('./studio');
 
 function route(app) {
 	const apiRouter = express.Router();
 	apiRouter.use('/auth/', authRouter);
 	apiRouter.use('/user/', userRouter);
 	apiRouter.use('/chat/', chatRouter);
+	apiRouter.use('/studio/', studioRouter);
 	app.use('/api/v1/', apiRouter);
 	app.use(function (req, res, next) {
 		res.status(400).json({

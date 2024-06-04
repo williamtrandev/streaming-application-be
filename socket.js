@@ -1,7 +1,9 @@
 const socket = require("socket.io");
 const User = require("./app/models/User");
+const Stream = require("./app/models/Stream");
 
 const willSocket = (server) => {
+	
 	const io = socket(server, {
 		cors: {
 			origin: process.env.ORIGIN,
@@ -9,12 +11,19 @@ const willSocket = (server) => {
 		}
 	})
 	const rooms = {};
-	const users = {};
-	io.on("connection", (socket) => {
+	const userToSocketMap = new Map();
+	const socketToUserMap = new Map();
+	io.on("connection", async (socket) => {
+		socket.on("logged", (userId) => {
+			console.log("User logged", userId);
+			userToSocketMap.set(userId, socket.id);
+			socketToUserMap.set(socket.id, userId);
+			console.log("userToSocketMap", userToSocketMap);
+			console.log("socketToUserMap", socketToUserMap);
+		})
 		socket.on("joinRoom", (streamId, userId) => {
 			socket.join(streamId);
-			console.log(socket.rooms)
-			users[userId] = socket.id;
+			console.log(socket.rooms);
 			if (!rooms[streamId]) {
 				rooms[streamId] = new Set();
 			}
@@ -29,11 +38,22 @@ const willSocket = (server) => {
 			io.to(streamId).emit("newMessage", { userId: userId, content });
 			console.log("Sent message");
 		});
-		socket.on("notification", async (data) => {
-			const { streamId, userId } = data;
+		socket.on("sendNotification", async (data) => {
+			const { stream, userId } = data;
 			const user = await User.findById(userId);
-			const follows = user.follows.filter(follow => follow.receiveNotification);
-			
+			if(!user) return;
+			const followsId = user.follows
+				.filter(follow => follow.receiveNotification)
+				.map(usr => usr.user.toString());
+			const socketIds = followsId.map(followId => userToSocketMap.get(followId));
+			console.log("Send notification", userId, socketIds, stream);
+			const notification = {
+				...stream,
+				username: user.username,
+				fullname: user.fullname,
+				profilePicture: user.profilePicture
+			};
+			io.to(socketIds).emit("receiveNotification", notification);
 		})
 		socket.on('disconnect', () => {
 			console.log(`Client disconnected: ${socket.id}`);
@@ -46,6 +66,12 @@ const willSocket = (server) => {
 					}
 				}
 			});
+			const userId = socketToUserMap.get(socket.id);
+			if (userId) {
+				userToSocketMap.delete(userId);
+				socketToUserMap.delete(socket.id);
+				console.log(`User disconnected: ${userId}`);
+			}
 		});
 	});
 }

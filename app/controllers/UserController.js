@@ -111,8 +111,8 @@ class UserController {
 			return res.status(500).json({ error: error.message });
 		}
     }
-  
-  async follow(req, res, next) {
+
+    async follow(req, res, next) {
 		try {
 			const { followId } = req.body;
 			if(!followId) {

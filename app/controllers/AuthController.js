@@ -72,7 +72,8 @@ class AuthController {
 					user: {
 						userId: user._id,
 						username: user.username,
-            verified: user.verified
+						fullname: user.fullname,
+						verified: user.verified
 					},
 					accessToken: token
 				});
