@@ -3,7 +3,7 @@ const User = require("../models/User");
 const bcrypt = require('bcrypt');
 const jwt = require("jsonwebtoken");
 const { sendMailToUser } = require("../common/mail");
-const { generateOTP, containsWhitespace, isValidEmail } = require('../common/utils');
+const { generateOTP, containsWhitespace, containsSpecialCharacter, isValidEmail } = require('../common/utils');
 const { OTP } = require('../constants');
 class AuthController {
 	async verifyOTP(req, res, next) {
@@ -55,24 +55,23 @@ class AuthController {
 			const match = await bcrypt.compare(password, user.password);
 			if (match) {
 
-				if (!user.verified) {
-					const otp = generateOTP();
-					await redisClient.setEx(username, 300, otp);
-					const subject = '[Duo Streaming] OTP verification';
-					const context = {
-						otp: otp,
-						message: 'Account Verification'
-					}
-					sendMailToUser(user, subject, 'sendOTP', context);
-					// return res.status(403).json({ error: 'Please check your email to continue' });
-				}
+				// if (!user.verified) {
+				// 	const otp = generateOTP();
+				// 	await redisClient.setEx(username, 300, otp);
+				// 	const subject = '[Duo Streaming] OTP verification';
+				// 	const context = {
+				// 		otp: otp,
+				// 		message: 'Account Verification'
+				// 	}
+				// 	sendMailToUser(user.email, subject, 'sendOTP', context);
+				// 	// return res.status(403).json({ error: 'Please check your email to continue' });
+				// }
 
 				const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-				return res.status(200).json({ 
+				return res.status(200).json({
 					user: {
 						userId: user._id,
-						username: user.username,
-            verified: user.verified
+						username: user.username
 					},
 					accessToken: token
 				});
@@ -101,7 +100,7 @@ class AuthController {
 				otp: otp,
 				message: "Reset password"
 			}
-			sendMailToUser(user, subject, 'sendOTP', context);
+			sendMailToUser(user.email, subject, 'sendOTP', context);
 			return res.status(200).json({ message: "Please check your email to continue" });
 		} catch (error) {
 			return res.status(500).json({ error: error.message });
@@ -146,9 +145,9 @@ class AuthController {
 			const { username } = req.body;
 			const existingUser = await User.findOne({ username: username });
 			if (existingUser) {
-				return res.status(400).json({ message: "This username is unavailable." });
+				return res.status(200).json({ available: false });
 			} else {
-				return res.status(200).json({ message: "This username is available." });
+				return res.status(200).json({ available: true });
 			}
 		} catch (error) {
 			return res.status(500).json({ error: error.message });
@@ -160,10 +159,27 @@ class AuthController {
 			const { email } = req.body;
 			const existingUser = await User.findOne({ email: email });
 			if (existingUser) {
-				return res.status(400).json({ message: "This email is unavailable." });
+				return res.status(200).json({ available: false });
 			} else {
-				return res.status(200).json({ message: "This email is available." });
+				return res.status(200).json({ available: true });
 			}
+		} catch (error) {
+			return res.status(500).json({ error: error.message });
+		}
+	}
+
+	async sendVerifyEmail(req, res) {
+		try {
+			const { email } = req.body;
+			const otp = generateOTP();
+			await redisClient.setEx(email, 300, otp);
+			const subject = '[Duo Streaming] OTP verification';
+			const context = {
+				otp: otp,
+				message: 'Email Address Verification'
+			}
+			sendMailToUser(email, subject, 'sendOTP', context);
+			return res.status(200).json({ message: "Please enter the OTP we send to your email to the registration form." })
 		} catch (error) {
 			return res.status(500).json({ error: error.message });
 		}
@@ -171,13 +187,13 @@ class AuthController {
 
 	async register(req, res) {
 		try {
-			const { username, fullname, password, email } = req.body;
+			const { username, fullname, password, email, otp } = req.body;
 
 			if (!username) {
 				return res.status(400).json({ message: "Required field 'username' is missing." });
 			}
-			if (containsWhitespace(username)) {
-				return res.status(400).json({ message: "Username don't contain white space." });
+			if (containsWhitespace(username) || containsSpecialCharacter(username)) {
+				return res.status(400).json({ message: "Username cannot contain spaces or special characters." });
 			}
 			if (!fullname) {
 				return res.status(400).json({ message: "Required field 'fullname' is missing." });
@@ -190,6 +206,16 @@ class AuthController {
 			}
 			if (!isValidEmail(email)) {
 				return res.status(400).json({ message: "Invalid email address." });
+			}
+			if (!otp) {
+				return res.status(400).json({ message: "Required field 'otp' is missing." });
+			}
+			const cachedOTP = await redisClient.get(email);
+			if (!cachedOTP) {
+				return res.status(400).json({ message: "OTP has expired." });
+			}
+			if (cachedOTP != otp) {
+				return res.status(400).json({ message: "OTP is not match." });
 			}
 
 			const existingUser = await User.findOne({ username: username });
@@ -210,19 +236,14 @@ class AuthController {
 			const savedUser = await newUser.save();
 			// login
 			const token = jwt.sign({ userId: savedUser._id }, process.env.JWT_SECRET);
-			// verify email address
-			const otp = generateOTP();
-			await redisClient.setEx(username, 300, otp);
-			const subject = '[Duo Streaming] OTP verification';
-			const context = {
-				otp: otp,
-				message: 'Account Verification'
-			}
-			sendMailToUser(savedUser, subject, 'sendOTP', context);
 
 			return res.status(201).json({
-				message: "Register successfully. Please verify your email address.",
-				token: token,
+				message: "Register successfully.",
+				user: {
+					userId: savedUser._id,
+					username: savedUser.username
+				},
+				accessToken: token
 			});
 		} catch (error) {
 			return res.status(500).json({ error: error.message });
@@ -312,7 +333,7 @@ class AuthController {
 				otp: otp,
 				message: 'New Email Address Verification'
 			}
-			sendMailToUser(user, subject, 'sendOTP', context);
+			sendMailToUser(user.email, subject, 'sendOTP', context);
 			await user.save();
 			return res.status(200).json({
 				newEmail: user.email,

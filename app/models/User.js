@@ -34,10 +34,10 @@ const UserSchema = new Schema({
 		title: String,
 		link: String
 	}],
-	verified: {
-		type: Boolean,
-		default: false
-	},
+	// verified: {
+	// 	type: Boolean,
+	// 	default: false
+	// },
 	follows: [{
 		user: {
 			type: Schema.Types.ObjectId,

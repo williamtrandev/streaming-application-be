@@ -14,7 +14,7 @@ class UserController {
                 return res.status(400).json({ message: "User not found." });
             }
             
-            const url = user.profile_picture;
+            const url = user.profilePicture;
             const parts = url.split('/');
             const filename = parts[parts.length - 1];
             if (filename != "user.jpg") {
@@ -22,10 +22,10 @@ class UserController {
                 const filePath = path.join(folderPath, filename);
                 fs.unlinkSync(filePath);
             }
-            user.profile_picture = `${process.env.API_LINK}/profile-picture/${file.filename}`;
+            user.profilePicture = `${process.env.API_LINK}/profile-picture/${file.filename}`;
             await user.save();
             return res.status(200).json({
-                newProfilePicture: user.profile_picture,
+                newProfilePicture: user.profilePicture,
                 message: "Change profile picture successfully."
             });
         } catch (error) {
@@ -43,7 +43,7 @@ class UserController {
                 return res.status(400).json({ message: "User not found." });
             }
             
-            const url = user.profile_banner;
+            const url = user.profileBanner;
             const parts = url.split('/');
             const filename = parts[parts.length - 1];
             if (filename != "user.jpg") {
@@ -51,10 +51,10 @@ class UserController {
                 const filePath = path.join(folderPath, filename);
                 fs.unlinkSync(filePath);
             }
-            user.profile_banner = `${process.env.API_LINK}/profile-banner/${file.filename}`;
+            user.profileBanner = `${process.env.API_LINK}/profile-banner/${file.filename}`;
             await user.save();
             return res.status(200).json({
-                newProfilePicture: user.profile_banner,
+                newProfilePicture: user.profileBanner,
                 message: "Change profile banner successfully."
             });
         } catch (error) {
