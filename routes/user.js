@@ -8,7 +8,7 @@ const uploadProfileBanner = require('../app/middlewares/uploadProfileBanner');
 router.put('/change-profile-picture', verifyToken, uploadProfilePicture.single('file'), userController.changeProfilePicture);
 router.put('/change-profile-banner', verifyToken, uploadProfileBanner.single('file'), userController.changeProfileBanner);
 router.put('/change-display-name', verifyToken, userController.changeDisplayName);
-
 router.post('/follow', verifyToken, userController.follow);
+router.get('/profile/:userId', userController.getProfile);
 
 module.exports = router;

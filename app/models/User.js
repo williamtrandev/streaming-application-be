@@ -21,11 +21,11 @@ const UserSchema = new Schema({
 	},
 	profilePicture: {
 		type: String,
-		default: 'user.jpg'
+		default: "http://localhost:3000/profile-picture/user.jpg"
 	},
 	profileBanner: {
 		type: String,
-		default: 'user.jpg'
+		default: "http://localhost:3000/profile-banner/user.jpg"
 	},
 	about: {
 		type: String

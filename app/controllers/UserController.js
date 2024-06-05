@@ -13,7 +13,7 @@ class UserController {
             if (!user) {
                 return res.status(400).json({ message: "User not found." });
             }
-            
+
             const url = user.profilePicture;
             const parts = url.split('/');
             const filename = parts[parts.length - 1];
@@ -22,15 +22,15 @@ class UserController {
                 const filePath = path.join(folderPath, filename);
                 fs.unlinkSync(filePath);
             }
-            user.profilePicture = `${process.env.API_LINK}/profile-picture/${file.filename}`;
+            user.profilePicture = `${process.env.IMG_LINK}/profile-picture/${file.filename}`;
             await user.save();
             return res.status(200).json({
                 newProfilePicture: user.profilePicture,
                 message: "Change profile picture successfully."
             });
         } catch (error) {
-			return res.status(500).json({ error: error.message });
-		}
+            return res.status(500).json({ error: error.message });
+        }
     }
 
     async changeProfileBanner(req, res) {
@@ -42,7 +42,7 @@ class UserController {
             if (!user) {
                 return res.status(400).json({ message: "User not found." });
             }
-            
+
             const url = user.profileBanner;
             const parts = url.split('/');
             const filename = parts[parts.length - 1];
@@ -51,15 +51,15 @@ class UserController {
                 const filePath = path.join(folderPath, filename);
                 fs.unlinkSync(filePath);
             }
-            user.profileBanner = `${process.env.API_LINK}/profile-banner/${file.filename}`;
+            user.profileBanner = `${process.env.IMG_LINK}/profile-banner/${file.filename}`;
             await user.save();
             return res.status(200).json({
                 newProfilePicture: user.profileBanner,
                 message: "Change profile banner successfully."
             });
         } catch (error) {
-			return res.status(500).json({ error: error.message });
-		}
+            return res.status(500).json({ error: error.message });
+        }
     }
 
     async changeDisplayName(req, res) {
@@ -80,8 +80,8 @@ class UserController {
                 message: "Change display name successfully."
             });
         } catch (error) {
-			return res.status(500).json({ error: error.message });
-		}
+            return res.status(500).json({ error: error.message });
+        }
     }
 
     async changeProfileInfo(req, res) {
@@ -108,32 +108,52 @@ class UserController {
                 message: "Change user's informations successfully."
             });
         } catch (error) {
-			return res.status(500).json({ error: error.message });
-		}
+            return res.status(500).json({ error: error.message });
+        }
     }
-  
-  async follow(req, res, next) {
-		try {
-			const { followId } = req.body;
-			if(!followId) {
-				return res.status(400).json({ message: 'Please enter followId' });
-			}
-			const userId = req.user.userId; 
-			const updatedUser = await User.findByIdAndUpdate(
-				userId,
-				{ $push: { follows: { user: followId } } },
-				{ new: true }
-			);
 
-			if (!updatedUser) {
-				return res.status(400).json({ message: "User not found" });
-			}
+    async follow(req, res, next) {
+        try {
+            const { followId } = req.body;
+            if (!followId) {
+                return res.status(400).json({ message: 'Please enter followId' });
+            }
+            const userId = req.user.userId;
+            const updatedUser = await User.findByIdAndUpdate(
+                userId,
+                { $push: { follows: { user: followId } } },
+                { new: true }
+            );
 
-			return res.status(200).json({ message: "Followed successfully", user: updatedUser });
-		} catch (error) {
-			return res.status(500).json({ error: error.message });
-		}
-	}
+            if (!updatedUser) {
+                return res.status(400).json({ message: "User not found" });
+            }
+
+            return res.status(200).json({ message: "Followed successfully", user: updatedUser });
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
+    async getProfile(req, res) {
+        try {
+            const { userId } = req.params;
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(400).json({ message: "User not found." });
+            }
+            return res.status(200).json({
+                profilePicture: user.profilePicture,
+                profileBanner: user.profileBanner,
+                username: user.username,
+                fullname: user.fullname,
+                about: user.about,
+                links: user.links
+            });
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new UserController();

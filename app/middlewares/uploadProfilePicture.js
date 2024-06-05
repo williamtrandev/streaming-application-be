@@ -2,13 +2,14 @@ const multer = require("multer");
 /* FILE STORAGE */
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		let uploadPath = "public/profile-picture";
+		const uploadPath = "public/profile-picture";
 		cb(null, uploadPath);
 	},
 	filename: function (req, file, cb) {
 		const userId = req.user.userId;
-		var filename = null;
-		filename = `${userId}.jpg`;
+		const date = new Date();
+    	const timestamp = `${date.getFullYear()}${date.getMonth() + 1}${date.getDate()}_${date.getHours()}${date.getMinutes()}${date.getSeconds()}`;
+		const filename = `${userId}_${timestamp}.jpg`;
 		cb(null, filename);
 	},
 });
