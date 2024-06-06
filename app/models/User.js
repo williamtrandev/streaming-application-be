@@ -34,10 +34,6 @@ const UserSchema = new Schema({
 		title: String,
 		link: String
 	}],
-	// verified: {
-	// 	type: Boolean,
-	// 	default: false
-	// },
 	follows: [{
 		user: {
 			type: Schema.Types.ObjectId,
@@ -47,7 +43,11 @@ const UserSchema = new Schema({
 			type: Boolean,
 			default: false
 		}
-	}]
+	}],
+	lastChangeUsername: {
+		type: Date,
+		default: Date.now
+	}
 }, { timestamps: true });
 
 const User = mongoose.model('User', UserSchema);

@@ -11,7 +11,7 @@ class UserController {
 
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(400).json({ error: "User not found." });
             }
 
             const url = user.profilePicture;
@@ -40,7 +40,7 @@ class UserController {
 
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(400).json({ error: "User not found." });
             }
 
             const url = user.profileBanner;
@@ -62,48 +62,24 @@ class UserController {
         }
     }
 
-    async changeDisplayName(req, res) {
-        try {
-            const userId = req.user.userId;
-            const newDisplayName = req.body.newDisplayName;
-            if (!newDisplayName) {
-                return res.status(400).json({ message: "Please enter new display name." });
-            }
-            const user = await User.findById(userId);
-            if (!user) {
-                return res.status(400).json({ message: "User not found." });
-            }
-            user.fullname = newDisplayName;
-            await user.save();
-            return res.status(200).json({
-                newDisplayName: user.fullname,
-                message: "Change display name successfully."
-            });
-        } catch (error) {
-            return res.status(500).json({ error: error.message });
-        }
-    }
-
     async changeProfileInfo(req, res) {
         try {
             const userId = req.user.userId;
-            const { newDisplayName, newAbout, newLinks } = req.body;
-            if (!newDisplayName || !newAbout || !newLinks) {
-                return res.status(400).json({ message: "Please enter new display name, new about and new social links." });
+            const { fullname, about } = req.body;
+            if (!fullname || !about) {
+                return res.status(400).json({ error: "Please enter new display name and new about." });
             }
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(400).json({ error: "User not found." });
             }
-            user.fullname = newDisplayName;
-            user.about = newAbout;
-            user.links = newLinks;
+            user.fullname = fullname;
+            user.about = about;
             await user.save();
             return res.status(200).json({
                 newUserInfo: {
                     fullname: user.fullname,
-                    about: user.about,
-                    links: user.links
+                    about: user.about
                 },
                 message: "Change user's informations successfully."
             });
@@ -140,15 +116,71 @@ class UserController {
             const { userId } = req.params;
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(400).json({ error: "User not found." });
             }
+            const today = new Date();
             return res.status(200).json({
                 profilePicture: user.profilePicture,
                 profileBanner: user.profileBanner,
                 username: user.username,
                 fullname: user.fullname,
                 about: user.about,
-                links: user.links
+                links: user.links,
+                canChangeUsername: (today.getDate() - user.lastChangeUsername.getDate()) >= 14
+            });
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
+    async getMiniProfile(req, res) {
+        try {
+            const { userId } = req.params;
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(400).json({ message: "User not found." });
+            }
+            return res.status(200).json({
+                profilePicture: user.profilePicture,
+                username: user.username,
+                fullname: user.fullname
+            });
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
+    async changeLinks(req, res) {
+        try {
+            const userId = req.user.userId;
+            const { links } = req.body;
+            if (!links) {
+                return res.status(400).json({ error: "Please enter new social links." });
+            }
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(400).json({ error: "User not found." });
+            }
+            user.links= links;
+            await user.save();
+            return res.status(200).json({
+                newLinks: links,
+                message: "Change user's social links successfully."
+            });
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
+    async getEmail(req, res) {
+        try {
+            const { userId } = req.params;
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(400).json({ message: "User not found." });
+            }
+            return res.status(200).json({
+                email: user.email
             });
         } catch (error) {
             return res.status(500).json({ error: error.message });

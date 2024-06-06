@@ -7,7 +7,9 @@ const storage = multer.diskStorage({
 	},
 	filename: function (req, file, cb) {
 		const userId = req.user.userId;
-		const filename = `${userId}.jpg`;
+		const date = new Date();
+    	const timestamp = `${date.getFullYear()}${date.getMonth() + 1}${date.getDate()}_${date.getHours()}${date.getMinutes()}${date.getSeconds()}`;
+		const filename = `${userId}_${timestamp}.jpg`;
 		cb(null, filename);
 	},
 });
