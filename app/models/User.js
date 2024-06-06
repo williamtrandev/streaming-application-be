@@ -38,16 +38,6 @@ const UserSchema = new Schema({
 		type: Boolean,
 		default: false
 	},
-	follows: [{
-		user: {
-			type: Schema.Types.ObjectId,
-			ref: 'User',
-		},
-		receiveNotification: {
-			type: Boolean,
-			default: false
-		}
-	}]
 }, { timestamps: true });
 
 const User = mongoose.model('User', UserSchema);

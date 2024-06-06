@@ -47,7 +47,7 @@ class AuthController {
 			if (!username || !password) {
 				return res.status(400).json({ message: "Please enter username and password" });
 			}
-			const user = await User.findOne({ username: username });
+			const user = await User.findOne({ username: username }).lean();
 			if (!user) {
 				return res.status(401).json({ error: 'Invalid email or password' });
 			}
@@ -68,13 +68,10 @@ class AuthController {
 				}
 
 				const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+				const { password: pwd, ...userWithoutPassword } = user;
+
 				return res.status(200).json({ 
-					user: {
-						userId: user._id,
-						username: user.username,
-						fullname: user.fullname,
-						verified: user.verified
-					},
+					user: userWithoutPassword,
 					accessToken: token
 				});
 			} else {

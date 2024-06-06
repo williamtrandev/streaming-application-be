@@ -1,6 +1,7 @@
 const socket = require("socket.io");
 const User = require("./app/models/User");
 const Stream = require("./app/models/Stream");
+const Follower = require("./app/models/Follower");
 
 const willSocket = (server) => {
 	
@@ -41,19 +42,27 @@ const willSocket = (server) => {
 		socket.on("sendNotification", async (data) => {
 			const { stream, userId } = data;
 			const user = await User.findById(userId);
-			if(!user) return;
-			const followsId = user.follows
-				.filter(follow => follow.receiveNotification)
-				.map(usr => usr.user.toString());
-			const socketIds = followsId.map(followId => userToSocketMap.get(followId));
-			console.log("Send notification", userId, socketIds, stream);
-			const notification = {
-				...stream,
-				username: user.username,
-				fullname: user.fullname,
-				profilePicture: user.profilePicture
-			};
-			io.to(socketIds).emit("receiveNotification", notification);
+			const followers = await Follower.find({ follower: userId, receiveNotification: true });
+			const followsId = followers.map(follower => follower.user.toString());
+			const socketIds = [];
+			followsId.forEach(followId => {
+				const socketId = userToSocketMap.get(followId);
+				if (socketId) {
+					socketIds.push(socketId);
+				}
+			});
+			if(socketIds.length > 0) {
+				console.log("Send notification", userId, socketIds, stream);
+				const notification = {
+					...stream,
+					user: {
+						username: user.username,
+						fullname: user.fullname,
+						profilePicture: user.profilePicture
+					}
+				};
+				io.to(socketIds).emit("receiveNotification", notification);
+			}
 		})
 		socket.on('disconnect', () => {
 			console.log(`Client disconnected: ${socket.id}`);

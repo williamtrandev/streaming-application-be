@@ -10,5 +10,6 @@ router.put('/change-profile-banner', verifyToken, uploadProfileBanner.single('fi
 router.put('/change-display-name', verifyToken, userController.changeDisplayName);
 
 router.post('/follow', verifyToken, userController.follow);
+router.get('/followed-channels', verifyToken, userController.getFollowedChannels);
 
 module.exports = router;
