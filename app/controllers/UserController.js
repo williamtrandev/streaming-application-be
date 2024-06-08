@@ -11,7 +11,7 @@ class UserController {
 
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ error: "User not found." });
+                return res.status(400).json({ message: "User not found." });
             }
 
             const url = user.profilePicture;
@@ -40,7 +40,7 @@ class UserController {
 
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ error: "User not found." });
+                return res.status(400).json({ message: "User not found." });
             }
 
             const url = user.profileBanner;
@@ -67,11 +67,11 @@ class UserController {
             const userId = req.user.userId;
             const { fullname, about } = req.body;
             if (!fullname || !about) {
-                return res.status(400).json({ error: "Please enter new display name and new about." });
+                return res.status(400).json({ message: "Please enter new display name and new about." });
             }
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ error: "User not found." });
+                return res.status(400).json({ message: "User not found." });
             }
             user.fullname = fullname;
             user.about = about;
@@ -116,7 +116,7 @@ class UserController {
             const { userId } = req.params;
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ error: "User not found." });
+                return res.status(400).json({ message: "User not found." });
             }
             const today = new Date();
             return res.status(200).json({
@@ -155,11 +155,11 @@ class UserController {
             const userId = req.user.userId;
             const { links } = req.body;
             if (!links) {
-                return res.status(400).json({ error: "Please enter new social links." });
+                return res.status(400).json({ message: "Please enter new social links." });
             }
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ error: "User not found." });
+                return res.status(400).json({ message: "User not found." });
             }
             user.links= links;
             await user.save();
