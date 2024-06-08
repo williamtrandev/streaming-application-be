@@ -1,5 +1,6 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+import mongoose from 'mongoose';
+
+const { Schema } = mongoose;
 
 const NotificationSchema = new Schema({
 	user: {
@@ -17,4 +18,4 @@ const NotificationSchema = new Schema({
 
 const Notification = mongoose.model('Notification', NotificationSchema);
 
-module.exports = Notification;
+export default Notification;

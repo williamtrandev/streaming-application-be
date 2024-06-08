@@ -1,5 +1,6 @@
-const redisClient = require('../common/redis').getClient();
-const Chat = require("../models/Chat");
+import redisClient from '../common/redis.js';
+import Chat from "../models/Chat.js";
+
 class ChatController {
 	async sendMessage(req, res, next) {
 		try {
@@ -17,7 +18,7 @@ class ChatController {
 				return res.status(500).json({ message: "Failed to send message to the database" });
 			}
 			return res.status(200).json({ msg: "Send message successfully" });
-		} catch(error) {
+		} catch (error) {
 			return res.status(500).json({ error: error.message });
 		}
 	}
@@ -26,28 +27,23 @@ class ChatController {
 		try {
 			const { streamId } = req.params;
 			const { limit } = req.query;
-			var query = Chat.find({ stream: streamId });
+			let query = Chat.find({ stream: streamId });
 			if (limit) {
-				query = query.limit(limit);
+				query = query.limit(parseInt(limit)); // parse limit to integer
 			}
 			const messages = await query
 				.populate({
 					path: 'user',
 					select: '_id username email fullname profilePicture'
 				})
-				// .populate({
-				// 	path: 'streamId',
-				// 	select: 'title description dateStream',
-				// 	as: 'stream'
-				// })
 				.exec();
 			return res.json({
 				messages: messages
-			})
+			});
 		} catch (error) {
 			return res.status(500).json({ error: error.message });
 		}
 	}
 }
 
-module.exports = new ChatController();
+export default new ChatController();

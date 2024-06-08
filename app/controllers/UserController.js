@@ -1,8 +1,8 @@
-const User = require("../models/User");
-const redisClient = require('../common/redis').getClient();
-const fs = require("fs");
-const path = require("path");
-const Follower = require("../models/Follower");
+import User from "../models/User.js";
+import redisClient from '../common/redis.js';
+import fs from "fs";
+import path from "path";
+import Follower from "../models/Follower.js";
 
 class UserController {
     async changeProfilePicture(req, res) {
@@ -14,12 +14,12 @@ class UserController {
             if (!user) {
                 return res.status(400).json({ message: "User not found." });
             }
-            
+
             const url = user.profile_picture;
             const parts = url.split('/');
             const filename = parts[parts.length - 1];
-            if (filename != "user.jpg") {
-                const folderPath = path.join(__dirname, '..', '..', '/public/profile-picture');
+            if (filename !== "user.jpg") {
+                const folderPath = path.join(__dirname, '..', '..', 'public', 'profile-picture');
                 const filePath = path.join(folderPath, filename);
                 fs.unlinkSync(filePath);
             }
@@ -30,8 +30,8 @@ class UserController {
                 message: "Change profile picture successfully."
             });
         } catch (error) {
-			return res.status(500).json({ error: error.message });
-		}
+            return res.status(500).json({ message: error.message });
+        }
     }
 
     async changeProfileBanner(req, res) {
@@ -43,12 +43,12 @@ class UserController {
             if (!user) {
                 return res.status(400).json({ message: "User not found." });
             }
-            
+
             const url = user.profile_banner;
             const parts = url.split('/');
             const filename = parts[parts.length - 1];
-            if (filename != "user.jpg") {
-                const folderPath = path.join(__dirname, '..', '..', '/public/profile-banner');
+            if (filename !== "user.jpg") {
+                const folderPath = path.join(__dirname, '..', '..', 'public', 'profile-banner');
                 const filePath = path.join(folderPath, filename);
                 fs.unlinkSync(filePath);
             }
@@ -59,8 +59,8 @@ class UserController {
                 message: "Change profile banner successfully."
             });
         } catch (error) {
-			return res.status(500).json({ error: error.message });
-		}
+            return res.status(500).json({ message: error.message });
+        }
     }
 
     async changeDisplayName(req, res) {
@@ -81,8 +81,8 @@ class UserController {
                 message: "Change display name successfully."
             });
         } catch (error) {
-			return res.status(500).json({ error: error.message });
-		}
+            return res.status(500).json({ message: error.message });
+        }
     }
 
     async changeProfileInfo(req, res) {
@@ -109,17 +109,17 @@ class UserController {
                 message: "Change user's informations successfully."
             });
         } catch (error) {
-			return res.status(500).json({ error: error.message });
-		}
+            return res.status(500).json({ message: error.message });
+        }
     }
 
     async follow(req, res, next) {
-		try {
-			const { followerId } = req.body;
+        try {
+            const { followerId } = req.body;
             if (!followerId) {
-				return res.status(400).json({ message: 'Please enter followId' });
-			}
-			const userId = req.user.userId; 
+                return res.status(400).json({ message: 'Please enter followId' });
+            }
+            const userId = req.user.userId;
             const data = await Follower.create({
                 user: userId,
                 follower: followerId
@@ -128,10 +128,10 @@ class UserController {
                 return res.status(500).json({ message: "Failed to follow user" });
             }
             return res.status(200).json({ message: "Followed successfully" });
-		} catch (error) {
-			return res.status(500).json({ error: error.message });
-		}
-	}
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
 
     async getFollowedChannels(req, res, next) {
         try {
@@ -139,12 +139,12 @@ class UserController {
             const followers = await Follower.find({
                 user: userId
             });
-            console.log( followers);
+            console.log(followers);
             return res.status(200).json({ message: "Followed successfully" });
         } catch (error) {
-            return res.status(500).json({ error: error.message });
+            return res.status(500).json({ message: error.message });
         }
     }
 }
 
-module.exports = new UserController();
+export default new UserController();

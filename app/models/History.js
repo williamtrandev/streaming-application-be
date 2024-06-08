@@ -1,6 +1,6 @@
-const Mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
-const { Schema } = Mongoose;
+const { Schema } = mongoose;
 
 const HistorySchema = new Schema({
 	user: {
@@ -19,4 +19,6 @@ const HistorySchema = new Schema({
 	}
 }, { timestamps: true });
 
-module.exports = Mongoose.model('History', HistorySchema);
+const History = mongoose.model('History', HistorySchema);
+
+export default History;
