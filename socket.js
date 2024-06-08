@@ -1,19 +1,20 @@
-const socket = require("socket.io");
-const User = require("./app/models/User");
-const Stream = require("./app/models/Stream");
-const Follower = require("./app/models/Follower");
+import { Server } from "socket.io";
+import User from "./app/models/User.js";
+import Stream from "./app/models/Stream.js";
+import Follower from "./app/models/Follower.js";
 
 const willSocket = (server) => {
-	
-	const io = socket(server, {
+	const io = new Server(server, {
 		cors: {
 			origin: process.env.ORIGIN,
 			credentials: true
 		}
-	})
+	});
+
 	const rooms = {};
 	const userToSocketMap = new Map();
 	const socketToUserMap = new Map();
+
 	io.on("connection", async (socket) => {
 		socket.on("logged", (userId) => {
 			console.log("User logged", userId);
@@ -21,7 +22,8 @@ const willSocket = (server) => {
 			socketToUserMap.set(socket.id, userId);
 			console.log("userToSocketMap", userToSocketMap);
 			console.log("socketToUserMap", socketToUserMap);
-		})
+		});
+
 		socket.on("joinRoom", (streamId, userId) => {
 			socket.join(streamId);
 			console.log(socket.rooms);
@@ -32,13 +34,15 @@ const willSocket = (server) => {
 			console.log("User joined");
 			console.log(rooms);
 		});
+
 		socket.on("sendMessage", (data) => {
 			console.log(data);
 			const { streamId, userId, content, duration } = data;
-			console.log(rooms[streamId])
-			io.to(streamId).emit("newMessage", { userId: userId, content });
+			console.log(rooms[streamId]);
+			io.to(streamId).emit("newMessage", { userId, content });
 			console.log("Sent message");
 		});
+
 		socket.on("sendNotification", async (data) => {
 			const { stream, userId } = data;
 			const user = await User.findById(userId);
@@ -51,7 +55,7 @@ const willSocket = (server) => {
 					socketIds.push(socketId);
 				}
 			});
-			if(socketIds.length > 0) {
+			if (socketIds.length > 0) {
 				console.log("Send notification", userId, socketIds, stream);
 				const notification = {
 					...stream,
@@ -63,7 +67,8 @@ const willSocket = (server) => {
 				};
 				io.to(socketIds).emit("receiveNotification", notification);
 			}
-		})
+		});
+
 		socket.on('disconnect', () => {
 			console.log(`Client disconnected: ${socket.id}`);
 			Object.keys(rooms).forEach((room) => {
@@ -83,6 +88,6 @@ const willSocket = (server) => {
 			}
 		});
 	});
-}
+};
 
-module.exports = willSocket;
+export default willSocket;

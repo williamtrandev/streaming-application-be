@@ -1,9 +1,12 @@
-const express = require('express');
+import express from 'express';
+import { verifyToken } from '../app/middlewares/verifyToken.js';
+import studioController from '../app/controllers/StudioController.js';
+
 const router = express.Router();
-const { verifyToken } = require('../app/middlewares/verifyToken');
-const studioController = require('../app/controllers/StudioController');
 
 router.post('/stream', verifyToken, studioController.saveStream);
 router.post('/notification', verifyToken, studioController.saveNotification);
 router.get('/notification', verifyToken, studioController.getNotification);
-module.exports = router;
+router.post('/stream/token', verifyToken, studioController.generateTokenStream);
+
+export default router;

@@ -1,13 +1,13 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const dotenv = require("dotenv");
-const multer = require("multer");
-const morgan = require("morgan");
-const willSocket = require("./socket");
-const path = require("path");
-
-const route = require('./routes');
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
+import multer from "multer";
+import morgan from "morgan";
+import willSocket from "./socket.js";
+import path from "path";
+import route from './routes/index.js';
+const __dirname = path.resolve();
 
 dotenv.config();
 const app = express();

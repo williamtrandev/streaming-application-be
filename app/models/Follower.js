@@ -1,5 +1,6 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+import mongoose from 'mongoose';
+
+const { Schema } = mongoose;
 
 const FollowerSchema = new Schema({
 	user: {
@@ -20,4 +21,4 @@ const FollowerSchema = new Schema({
 
 const Follower = mongoose.model('Follower', FollowerSchema);
 
-module.exports = Follower;
+export default Follower;

@@ -1,16 +1,18 @@
-const multer = require("multer");
+import multer from "multer";
+
 /* FILE STORAGE */
 const storage = multer.diskStorage({
-	destination: function (req, file, cb) {
+	destination: (req, file, cb) => {
 		let uploadPath = "public/profile-picture";
 		cb(null, uploadPath);
 	},
-	filename: function (req, file, cb) {
+	filename: (req, file, cb) => {
 		const userId = req.user.userId;
-		var filename = null;
-		filename = `${userId}.jpg`;
+		const filename = `${userId}.jpg`;
 		cb(null, filename);
 	},
 });
+
 const uploadProfilePicture = multer({ storage });
-module.exports = uploadProfilePicture;
+
+export default uploadProfilePicture;

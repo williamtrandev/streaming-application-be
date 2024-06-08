@@ -1,6 +1,7 @@
-const Stream = require("../models/Stream");
-const Notification = require("../models/Notification");
-const Follower = require("../models/Follower");
+import Stream from "../models/Stream.js";
+import Notification from "../models/Notification.js";
+import Follower from "../models/Follower.js";
+import { AccessToken } from 'livekit-server-sdk';
 
 class StudioController {
 	async saveStream(req, res) {
@@ -19,12 +20,13 @@ class StudioController {
 			if (!data) {
 				return res.status(500).json({ message: "Failed to create stream" });
 			}
-			return res.status(201).json({ 
+			
+			return res.status(201).json({
 				message: "Create stream successfully",
 				stream: data
 			});
 		} catch (error) {
-			return res.status(500).json({ error: error.message });
+			return res.status(500).json({ message: error.message });
 		}
 	}
 	async saveNotification(req, res, next) {
@@ -49,7 +51,7 @@ class StudioController {
 				message: "Create notifications successfully"
 			});
 		} catch (error) {
-			return res.status(500).json({ error: error.message });
+			return res.status(500).json({ message: error.message });
 		}
 	}
 	async getNotification(req, res, next) {
@@ -59,18 +61,33 @@ class StudioController {
 				return res.status(400).json({ message: "Please login" });
 			}
 			const notifications = await Notification.find({ user: userId })
-				.sort({ createdAt: -1 }) 
-				.limit(10) 
-				.populate('user', 'username fullname profilePicture') 
+				.sort({ createdAt: -1 })
+				.limit(10)
+				.populate('user', 'username fullname profilePicture')
 				.exec();
 			return res.status(200).json({
 				notifications: notifications
 			});
 		} catch (error) {
-			console.log(error)
-			return res.status(500).json({ error: error.message });
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async generateTokenStream(req, res, next) {
+		try {
+			const { userId, streamId } = req.body;
+			const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
+				identity: userId,
+			});
+			at.addGrant({ roomJoin: true, room: streamId });
+			const token = await at.toJwt();
+			return res.status(200).json({
+				token: token
+			})
+		} catch(error) {
+			return res.status(500).json({ message: error.message });
 		}
 	}
 }
 
-module.exports = new StudioController();
+export default new StudioController();
