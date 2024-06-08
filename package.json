@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -16,6 +17,7 @@
     "express": "^4.19.2",
     "express-handlebars": "^7.1.2",
     "jsonwebtoken": "^9.0.2",
+    "livekit-server-sdk": "^2.4.0",
     "mongodb": "^6.6.2",
     "mongoose": "^8.4.0",
     "morgan": "^1.10.0",

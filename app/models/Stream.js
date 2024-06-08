@@ -1,5 +1,6 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+import mongoose from 'mongoose';
+
+const { Schema } = mongoose;
 
 const StreamSchema = new Schema({
 	user: {
@@ -21,7 +22,7 @@ const StreamSchema = new Schema({
 		required: true
 	},
 	duration: {
-		type: Number, 
+		type: Number,
 		default: 0
 	},
 	numViewsLive: {
@@ -44,4 +45,4 @@ const StreamSchema = new Schema({
 
 const Stream = mongoose.model('Stream', StreamSchema);
 
-module.exports = Stream;
+export default Stream;

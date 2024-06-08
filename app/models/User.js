@@ -1,5 +1,6 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+import mongoose from 'mongoose';
+
+const { Schema } = mongoose;
 
 const UserSchema = new Schema({
 	email: {
@@ -34,16 +35,6 @@ const UserSchema = new Schema({
 		title: String,
 		link: String
 	}],
-	follows: [{
-		user: {
-			type: Schema.Types.ObjectId,
-			ref: 'User',
-		},
-		receiveNotification: {
-			type: Boolean,
-			default: false
-		}
-	}],
 	lastChangeUsername: {
 		type: Date,
 		default: Date.now
@@ -52,4 +43,4 @@ const UserSchema = new Schema({
 
 const User = mongoose.model('User', UserSchema);
 
-module.exports = User;
+export default User;

@@ -1,9 +1,11 @@
-const nodemailer = require('nodemailer');
-const exphbs = require('express-handlebars');
-const nodemailerhbs = require('nodemailer-express-handlebars');
-require('dotenv').config();
+import nodemailer from 'nodemailer';
+import exphbs from 'express-handlebars';
+import nodemailerhbs from 'nodemailer-express-handlebars';
+import dotenv from 'dotenv';
 
-exports.sendMailToUser = async (email, subject, template, context) => {
+dotenv.config();
+
+const sendMailToUser = async (email, subject, template, context) => {
 	const transporter = nodemailer.createTransport({
 		service: 'Gmail',
 		auth: {
@@ -32,5 +34,13 @@ exports.sendMailToUser = async (email, subject, template, context) => {
 		context: context,
 	};
 
-	await transporter.sendMail(mailOptions);
+	try {
+		await transporter.sendMail(mailOptions);
+		console.log(`Email sent successfully to ${user.email}`);
+	} catch (error) {
+		console.error(`Error sending email to ${user.email}:`, error);
+		throw error;
+	}
 };
+
+export { sendMailToUser };

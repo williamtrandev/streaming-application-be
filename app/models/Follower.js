@@ -2,23 +2,23 @@ import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
-const HistorySchema = new Schema({
+const FollowerSchema = new Schema({
 	user: {
 		type: Schema.Types.ObjectId,
 		ref: 'User',
 		required: true
 	},
-	stream: {
+	follower: {
 		type: Schema.Types.ObjectId,
-		ref: 'Stream',
+		ref: 'User',
 		required: true
 	},
-	liked: {
+	receiveNotification: {
 		type: Boolean,
-		default: null
+		default: false
 	}
 }, { timestamps: true });
 
-const History = mongoose.model('History', HistorySchema);
+const Follower = mongoose.model('Follower', FollowerSchema);
 
-export default History;
+export default Follower;

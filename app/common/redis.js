@@ -1,15 +1,15 @@
-const { createClient } = require('redis');
+import { createClient } from 'redis';
 
 class RedisClient {
     constructor() {
         if (!RedisClient.instance) {
-            // this.client = createClient();
-            this.client = createClient({
-                socket: {
-                    host: '127.0.0.1', // Sử dụng địa chỉ IPv4 localhost
-                    port: 6379 // Cổng mặc định của Redis
-                }
-            });
+            this.client = createClient();
+            // this.client = createClient({
+            //     socket: {
+            //         host: '127.0.0.1', // Sử dụng địa chỉ IPv4 localhost
+            //         port: 6379 // Cổng mặc định của Redis
+            //     }
+            // });
             this.client.on('error', (err) => console.log('Redis Client Error', err));
 
             (async () => {
@@ -27,7 +27,7 @@ class RedisClient {
         return RedisClient.instance;
     }
 
-    getClient() {
+    getInstance() {
         return this.client;
     }
 }
@@ -35,4 +35,4 @@ class RedisClient {
 const instance = new RedisClient();
 Object.freeze(instance);
 
-module.exports = instance;
+export default instance;

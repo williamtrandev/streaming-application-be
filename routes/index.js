@@ -1,31 +1,36 @@
-const express = require('express');
-const authRouter = require('./auth');
-const userRouter = require('./user');
-const chatRouter = require('./chat');
+import express from 'express';
+import authRouter from './auth.js';
+import userRouter from './user.js';
+import chatRouter from './chat.js';
+import studioRouter from './studio.js';
 
-function route(app) {
+const route = (app) => {
 	const apiRouter = express.Router();
+
 	apiRouter.use('/auth/', authRouter);
 	apiRouter.use('/user/', userRouter);
 	apiRouter.use('/chat/', chatRouter);
+	apiRouter.use('/studio/', studioRouter);
+
 	app.use('/api/v1/', apiRouter);
-	app.use(function (req, res, next) {
-		res.status(400).json({
+
+	app.use((req, res, next) => {
+		res.status(404).json({
 			title: 'Trang không tìm thấy',
 			content: '404 - Trang không tồn tại',
 			desc: 'Trang bạn đang tìm không tồn tại. Quay về trang chủ'
-		})
+		});
 	});
 
 	// Middleware bắt lỗi 500
-	app.use(function (err, req, res, next) {
+	app.use((err, req, res, next) => {
 		console.error(err.stack);
 		res.status(500).json({
 			title: 'Lỗi',
 			content: '500 - Lỗi server',
 			desc: 'Lỗi server. Quay về trang chủ'
-		})
+		});
 	});
-}
+};
 
-module.exports = route;
+export default route;
