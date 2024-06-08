@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const sendMailToUser = async (user, subject, template, context) => {
+const sendMailToUser = async (email, subject, template, context) => {
 	const transporter = nodemailer.createTransport({
 		service: 'Gmail',
 		auth: {
@@ -28,7 +28,7 @@ const sendMailToUser = async (user, subject, template, context) => {
 
 	const mailOptions = {
 		from: '"Coding Duo" <duostreaming@codingduo.com>',
-		to: user.email,
+		to: email,
 		subject: subject,
 		template: template,
 		context: context,

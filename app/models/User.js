@@ -22,11 +22,11 @@ const UserSchema = new Schema({
 	},
 	profilePicture: {
 		type: String,
-		default: 'user.jpg'
+		default: "http://localhost:3000/profile-picture/user.jpg"
 	},
 	profileBanner: {
 		type: String,
-		default: 'user.jpg'
+		default: "http://localhost:3000/profile-banner/user.jpg"
 	},
 	about: {
 		type: String
@@ -35,10 +35,10 @@ const UserSchema = new Schema({
 		title: String,
 		link: String
 	}],
-	verified: {
-		type: Boolean,
-		default: false
-	},
+	lastChangeUsername: {
+		type: Date,
+		default: Date.now
+	}
 }, { timestamps: true });
 
 const User = mongoose.model('User', UserSchema);

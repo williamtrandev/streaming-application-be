@@ -2,13 +2,15 @@ import multer from "multer";
 
 /* FILE STORAGE */
 const storage = multer.diskStorage({
-	destination: (req, file, cb) => {
-		let uploadPath = "public/profile-banner";
+	destination: function (req, file, cb) {
+		const uploadPath = "public/profile-banner";
 		cb(null, uploadPath);
 	},
 	filename: (req, file, cb) => {
 		const userId = req.user.userId;
-		const filename = `${userId}.jpg`;
+		const date = new Date();
+    	const timestamp = `${date.getFullYear()}${date.getMonth() + 1}${date.getDate()}_${date.getHours()}${date.getMinutes()}${date.getSeconds()}`;
+		const filename = `${userId}_${timestamp}.jpg`;
 		cb(null, filename);
 	},
 });

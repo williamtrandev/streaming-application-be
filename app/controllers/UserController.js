@@ -15,7 +15,7 @@ class UserController {
                 return res.status(400).json({ message: "User not found." });
             }
 
-            const url = user.profile_picture;
+            const url = user.profilePicture;
             const parts = url.split('/');
             const filename = parts[parts.length - 1];
             if (filename !== "user.jpg") {
@@ -23,10 +23,10 @@ class UserController {
                 const filePath = path.join(folderPath, filename);
                 fs.unlinkSync(filePath);
             }
-            user.profile_picture = `${process.env.API_LINK}/profile-picture/${file.filename}`;
+            user.profilePicture = `${process.env.IMG_LINK}/profile-picture/${file.filename}`;
             await user.save();
             return res.status(200).json({
-                newProfilePicture: user.profile_picture,
+                newProfilePicture: user.profilePicture,
                 message: "Change profile picture successfully."
             });
         } catch (error) {
@@ -44,7 +44,7 @@ class UserController {
                 return res.status(400).json({ message: "User not found." });
             }
 
-            const url = user.profile_banner;
+            const url = user.profileBanner;
             const parts = url.split('/');
             const filename = parts[parts.length - 1];
             if (filename !== "user.jpg") {
@@ -52,10 +52,10 @@ class UserController {
                 const filePath = path.join(folderPath, filename);
                 fs.unlinkSync(filePath);
             }
-            user.profile_banner = `${process.env.API_LINK}/profile-banner/${file.filename}`;
+            user.profileBanner = `${process.env.IMG_LINK}/profile-banner/${file.filename}`;
             await user.save();
             return res.status(200).json({
-                newProfilePicture: user.profile_banner,
+                newProfilePicture: user.profileBanner,
                 message: "Change profile banner successfully."
             });
         } catch (error) {
@@ -88,25 +88,99 @@ class UserController {
     async changeProfileInfo(req, res) {
         try {
             const userId = req.user.userId;
-            const { newDisplayName, newAbout, newLinks } = req.body;
-            if (!newDisplayName || !newAbout || !newLinks) {
-                return res.status(400).json({ message: "Please enter new display name, new about and new social links." });
+            const { fullname, about } = req.body;
+            if (!fullname || !about) {
+                return res.status(400).json({ message: "Please enter new display name and new about." });
             }
             const user = await User.findById(userId);
             if (!user) {
                 return res.status(400).json({ message: "User not found." });
             }
-            user.fullname = newDisplayName;
-            user.about = newAbout;
-            user.links = newLinks;
+            user.fullname = fullname;
+            user.about = about;
             await user.save();
             return res.status(200).json({
                 newUserInfo: {
                     fullname: user.fullname,
-                    about: user.about,
-                    links: user.links
+                    about: user.about
                 },
                 message: "Change user's informations successfully."
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async getProfile(req, res) {
+        try {
+            const { userId } = req.params;
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(400).json({ message: "User not found." });
+            }
+            const today = new Date();
+            return res.status(200).json({
+                profilePicture: user.profilePicture,
+                profileBanner: user.profileBanner,
+                username: user.username,
+                fullname: user.fullname,
+                about: user.about,
+                links: user.links,
+                canChangeUsername: (today.getDate() - user.lastChangeUsername.getDate()) >= 14
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async getMiniProfile(req, res) {
+        try {
+            const { userId } = req.params;
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(400).json({ message: "User not found." });
+            }
+            return res.status(200).json({
+                profilePicture: user.profilePicture,
+                username: user.username,
+                fullname: user.fullname
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async changeLinks(req, res) {
+        try {
+            const userId = req.user.userId;
+            const { links } = req.body;
+            if (!links) {
+                return res.status(400).json({ message: "Please enter new social links." });
+            }
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(400).json({ message: "User not found." });
+            }
+            user.links= links;
+            await user.save();
+            return res.status(200).json({
+                newLinks: links,
+                message: "Change user's social links successfully."
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async getEmail(req, res) {
+        try {
+            const { userId } = req.params;
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(400).json({ message: "User not found." });
+            }
+            return res.status(200).json({
+                email: user.email
             });
         } catch (error) {
             return res.status(500).json({ message: error.message });
