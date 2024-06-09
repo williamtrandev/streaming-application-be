@@ -41,6 +41,9 @@ const UserSchema = new Schema({
 	}
 }, { timestamps: true });
 
+// Tạo text index
+UserSchema.index({ username: 'text', fullname: 'text' });
+
 const User = mongoose.model('User', UserSchema);
 
 export default User;
