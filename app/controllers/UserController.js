@@ -3,6 +3,7 @@ import redisClient from '../common/redis.js';
 import fs from "fs";
 import path from "path";
 import Follower from "../models/Follower.js";
+import { fileURLToPath } from 'url';
 
 class UserController {
     async changeProfilePicture(req, res) {
@@ -14,6 +15,12 @@ class UserController {
             if (!user) {
                 return res.status(400).json({ message: "User not found." });
             }
+
+            // Lấy đường dẫn file hiện tại
+            const __filename = fileURLToPath(import.meta.url);
+
+            // Lấy đường dẫn thư mục hiện tại
+            const __dirname = path.dirname(__filename);
 
             const url = user.profilePicture;
             const parts = url.split('/');
@@ -43,6 +50,12 @@ class UserController {
             if (!user) {
                 return res.status(400).json({ message: "User not found." });
             }
+
+            // Lấy đường dẫn file hiện tại
+            const __filename = fileURLToPath(import.meta.url);
+
+            // Lấy đường dẫn thư mục hiện tại
+            const __dirname = path.dirname(__filename);
 
             const url = user.profileBanner;
             const parts = url.split('/');
@@ -161,7 +174,7 @@ class UserController {
             if (!user) {
                 return res.status(400).json({ message: "User not found." });
             }
-            user.links= links;
+            user.links = links;
             await user.save();
             return res.status(200).json({
                 newLinks: links,
