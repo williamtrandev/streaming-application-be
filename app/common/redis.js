@@ -1,13 +1,15 @@
 import { createClient } from 'redis';
+import dotenv from 'dotenv';
+dotenv.config();
 
 class RedisClient {
     constructor() {
         if (!RedisClient.instance) {
-            // this.client = createClient();
             this.client = createClient({
+                password: process.env.REDIS_PASSWORD,
                 socket: {
-                    host: '127.0.0.1', // Sử dụng địa chỉ IPv4 localhost
-                    port: 6379 // Cổng mặc định của Redis
+                    host: process.env.REDIS_HOST,
+                    port: 14563
                 }
             });
             this.client.on('error', (err) => console.log('Redis Client Error', err));
