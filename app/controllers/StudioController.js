@@ -81,19 +81,7 @@ class StudioController {
 		}
 	}
 
-	// async generateTokenStream(req, res, next) {
-	// 	try {
-	// 		const { userId, streamId } = req.body;
-	// 		const token = await generateStreamerToken(streamId);
-	// 		return res.status(200).json({
-	// 			token: token
-	// 		})
-	// 	} catch(error) {
-	// 		return res.status(500).json({ message: error.message });
-	// 	}
-	// }
-
-	async getDetailStreamAndToken(req, res, next) {
+	async getDetailStream(req, res, next) {
 		try {
 			const { streamId } = req.params;
 			const userId = req?.user?.userId;
@@ -107,20 +95,82 @@ class StudioController {
 				error.status = 400;
 				return next(error);
 			}
-			const identity = userId || uuidv4();
-			const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
-				identity: identity,
-			});
-			at.addGrant({ roomJoin: true, room: streamId });
-			const token = await at.toJwt();
 			return res.status(200).json({
-				stream: stream,
-				token: token
+				stream: stream
 			})
 		} catch (error) {
 			return res.status(500).json({ message: error.message });
 		}
 	}
+
+	async getAllComingStreams(req, res, next) {
+		try {
+			const userId = req?.user?.userId;
+			if(!userId) {
+				return res.status(403).json({ message: 'Access denied' });
+			}
+			const comingStreams = await Stream.find({ 
+				user: userId,
+				started: false 
+			}).lean();
+			return res.status(200).json({
+				data: comingStreams
+			})
+		} catch (error) {
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async editStream(req, res, next) {
+		try {
+			const { streamId } = req.params;
+			const { title, description, dateStream, tags, previewImage, rerun } = req.body;
+			const currentStream = await Stream.findById(streamId);
+			if (!currentStream) {
+				return res.status(404).json({ message: "Stream not found" });
+			}
+			let newPreviewImage = {};
+			if (previewImage) {
+				newPreviewImage = await cloudinaryService.getInstance().uploadImage(previewImage, 'studio');
+				if (currentStream.previewImage && currentStream.previewImage.publicId) {
+					await cloudinaryService.getInstance().deleteImage(currentStream.previewImage.publicId);
+				}
+			} else {
+				newPreviewImage = currentStream.previewImage;
+			}
+			const updatedData = await Stream.findByIdAndUpdate(streamId, {
+				title: title,
+				description: description,
+				dateStream: dateStream,
+				tags: tags,
+				previewImage: newPreviewImage,
+				rerun: rerun
+			}, { new: true });
+			if (!updatedData) {
+				return res.status(500).json({ message: "Failed to update stream" });
+			}
+
+			return res.status(200).json({
+				message: "Update stream successfully",
+				stream: updatedData
+			});
+		} catch (error) {
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async deleteStream(req, res, next) {
+		try {
+			const { streamId } = req.params;
+			const deletedStream = await Stream.findByIdAndDelete(streamId);
+			if (!deletedStream) {
+				return res.status(404).json({ message: 'Stream not found' });
+			}
+			res.status(204).json({ message: 'Stream deleted successfully' });
+		} catch (error) {
+			return res.status(500).json({ message: error.message });
+		}
+}
 }
 
 export default new StudioController();

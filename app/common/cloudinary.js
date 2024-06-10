@@ -43,6 +43,16 @@ class CloudinaryService {
 		});
 	}
 
+	async deleteImage(publicId) {
+		try {
+			const deleteResult = await cloudinary.uploader.destroy(publicId);
+			return deleteResult;
+		} catch (error) {
+			console.error("Error deleting image:", error);
+			throw error;
+		}
+	}
+
 	getInstance() {
 		return this;
 	}

@@ -41,6 +41,10 @@ const StreamSchema = new Schema({
 		type: Boolean,
 		default: false
 	},
+	rerun: {
+		type: Boolean,
+		default: false
+	},
 	previewImage: {
 		publicId: String,
 		url: String
