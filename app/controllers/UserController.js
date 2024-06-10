@@ -202,14 +202,14 @@ class UserController {
 
     async follow(req, res, next) {
         try {
-            const { followerId } = req.body;
-            if (!followerId) {
-                return res.status(400).json({ message: 'Please enter followId' });
+            const { streamerId } = req.body;
+            if (!streamerId) {
+                return res.status(400).json({ message: 'Please enter streamerId' });
             }
             const userId = req.user.userId;
             const data = await Follower.create({
                 user: userId,
-                follower: followerId
+                streamer: streamerId
             });
             if (!data) {
                 return res.status(500).json({ message: "Failed to follow user" });
