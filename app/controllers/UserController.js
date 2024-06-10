@@ -232,6 +232,44 @@ class UserController {
             return res.status(500).json({ message: error.message });
         }
     }
+
+    async getStreamerProfile(req, res) {
+        try {
+            const { username } = req.params;
+            const user = await User.findOne({ username: username });
+            if (!user) {
+                return res.status(400).json({ message: "User not found." });
+            }
+            const numFollowers = await Follower.countDocuments({ user: user._id });
+            
+            return res.status(200).json({
+                profilePicture: user.profilePicture,
+                profileBanner: user.profileBanner,
+                username: user.username,
+                fullname: user.fullname,
+                numFollowers: numFollowers
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async getStreamerABout(req, res) {
+        try {
+            const { username } = req.params;
+            const user = await User.findOne({ username: username });
+            if (!user) {
+                return res.status(400).json({ message: "User not found." });
+            }
+            
+            return res.status(200).json({
+                about: user.about,
+                links: user.links
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
 }
 
 export default new UserController();

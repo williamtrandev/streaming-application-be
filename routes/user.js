@@ -15,5 +15,7 @@ router.get('/mini-profile/:userId', userController.getMiniProfile);
 router.put('/change-links', verifyToken, userController.changeLinks);
 router.get('/email/:userId', userController.getEmail);
 router.get('/followed-channels', verifyToken, userController.getFollowedChannels);
+router.get('/channel/:username', userController.getStreamerProfile);
+router.get('/about/:username', userController.getStreamerABout);
 
 export default router;

@@ -8,7 +8,7 @@ const FollowerSchema = new Schema({
 		ref: 'User',
 		required: true
 	},
-	follower: {
+	streamer: {
 		type: Schema.Types.ObjectId,
 		ref: 'User',
 		required: true
