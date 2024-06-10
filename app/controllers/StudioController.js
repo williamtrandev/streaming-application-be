@@ -3,19 +3,27 @@ import Notification from "../models/Notification.js";
 import Follower from "../models/Follower.js";
 import { AccessToken } from 'livekit-server-sdk';
 import { v4 as uuidv4 } from 'uuid';
+import cloudinaryService from '../common/cloudinary.js';
+import { CLOUDINARY_FOLDER } from "../constants/index.js";
+
 class StudioController {
 	async saveStream(req, res) {
 		try {
-			const { userId, title, description, dateStream, tags } = req.body;
+			const { userId, title, description, dateStream, tags, previewImage } = req.body;
 			if (!userId || !title || !description || !dateStream) {
 				return res.status(400).json({ message: "Please enter userId, title, description, dateStream" });
 			}
+			const newPreviewImage = await cloudinaryService.getInstance().uploadImage(previewImage, CLOUDINARY_FOLDER.STUDIO);
 			const data = await Stream.create({
 				user: userId,
 				title: title,
 				description: description,
 				dateStream: dateStream,
-				tags: tags
+				tags: tags,
+				previewImage: {
+					publicId: newPreviewImage.public_id,
+					url: newPreviewImage.secure_url
+				}
 			});
 			if (!data) {
 				return res.status(500).json({ message: "Failed to create stream" });
@@ -35,7 +43,7 @@ class StudioController {
 			if (!userId || !content) {
 				return res.status(400).json({ message: "Please enter userId, content" });
 			}
-			const followers = await Follower.find({ follower: userId, receiveNotification: true });
+			const followers = await Follower.find({ streamer: userId, receiveNotification: true });
 			const notifications = followers.map(follower => ({
 				user: follower.user,
 				content: content

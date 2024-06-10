@@ -46,7 +46,7 @@ const willSocket = (server) => {
 		socket.on("sendNotification", async (data) => {
 			const { stream, userId } = data;
 			const user = await User.findById(userId);
-			const followers = await Follower.find({ follower: userId, receiveNotification: true });
+			const followers = await Follower.find({ streamer: userId, receiveNotification: true });
 			const followsId = followers.map(follower => follower.user.toString());
 			const socketIds = [];
 			followsId.forEach(followId => {

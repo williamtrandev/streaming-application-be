@@ -40,6 +40,10 @@ const StreamSchema = new Schema({
 	started: {
 		type: Boolean,
 		default: false
+	},
+	previewImage: {
+		publicId: String,
+		url: String
 	}
 }, { timestamps: true });
 
