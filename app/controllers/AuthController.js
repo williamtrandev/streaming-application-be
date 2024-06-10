@@ -173,7 +173,7 @@ class AuthController {
 		try {
 			const { email } = req.body;
 			const otp = generateOTP();
-			await redisClient.setEx(email, 300, otp);
+			await redisClient.getInstance().setEx(email, 300, otp);
 			const subject = '[Duo Streaming] OTP verification';
 			const context = {
 				otp: otp,
@@ -182,7 +182,7 @@ class AuthController {
 			sendMailToUser(email, subject, 'sendOTP', context);
 			return res.status(200).json({ message: "Please enter the OTP we send to your email to the form." });
 		} catch (error) {
-			return res.status(500).json({ error: error.message });
+			return res.status(500).json({ message: error.message });
 		}
 	}
 
@@ -211,7 +211,7 @@ class AuthController {
 			if (!otp) {
 				return res.status(400).json({ message: "Required field 'otp' is missing." });
 			}
-			const cachedOTP = await redisClient.get(email);
+			const cachedOTP = await redisClient.getInstance().get(email);
 			if (!cachedOTP) {
 				return res.status(400).json({ message: "OTP has expired." });
 			}
@@ -232,7 +232,15 @@ class AuthController {
 				username: username,
 				fullname: fullname,
 				password: hash,
-				email: email
+				email: email,
+				profilePicture: {
+					publicId: process.env.DEFAULT_PROFILE_PICTURE_PUBLIC_ID,
+					url: process.env.DEFAULT_PROFILE_PICTURE_URL
+				},
+				profileBanner: {
+					publicId: process.env.DEFAULT_PROFILE_BANNER_PUBLIC_ID,
+					url: process.env.DEFAULT_PROFILE_BANNER_URL
+				}
 			});
 			const savedUser = await newUser.save();
 			// login
@@ -241,7 +249,7 @@ class AuthController {
 			return res.status(201).json({
 				message: "Register successfully.",
 				user: {
-					userId: savedUser._id,
+					_id: savedUser._id,
 					username: savedUser.username
 				},
 				accessToken: token
@@ -330,7 +338,7 @@ class AuthController {
 			if (!otp) {
 				return res.status(400).json({ message: "Required field 'otp' is missing." });
 			}
-			const cachedOTP = await redisClient.get(email);
+			const cachedOTP = await redisClient.getInstance().get(email);
 			if (!cachedOTP) {
 				return res.status(400).json({ message: "OTP has expired." });
 			}

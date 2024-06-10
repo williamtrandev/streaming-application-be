@@ -3,37 +3,31 @@ import redisClient from '../common/redis.js';
 import fs from "fs";
 import path from "path";
 import Follower from "../models/Follower.js";
-import { fileURLToPath } from 'url';
+import cloudinaryService from '../common/cloudinary.js';
+import { CLOUDINARY_FOLDER } from "../constants/index.js";
 
 class UserController {
     async changeProfilePicture(req, res) {
         try {
             const userId = req.user.userId;
-            const file = req.file;
+            const { profilePicture } = req.body;
 
             const user = await User.findById(userId);
             if (!user) {
                 return res.status(400).json({ message: "User not found." });
             }
 
-            // Lấy đường dẫn file hiện tại
-            const __filename = fileURLToPath(import.meta.url);
-
-            // Lấy đường dẫn thư mục hiện tại
-            const __dirname = path.dirname(__filename);
-
-            const url = user.profilePicture;
-            const parts = url.split('/');
-            const filename = parts[parts.length - 1];
-            if (filename !== "user.jpg") {
-                const folderPath = path.join(__dirname, '..', '..', 'public', 'profile-picture');
-                const filePath = path.join(folderPath, filename);
-                fs.unlinkSync(filePath);
+            if (user.profilePicture.publicId != process.env.DEFAULT_PROFILE_PICTURE_PUBLIC_ID) {
+                const deleteResult = await cloudinaryService.getInstance().deleteImage(user.profilePicture.publicId);
             }
-            user.profilePicture = `${process.env.IMG_LINK}/profile-picture/${file.filename}`;
+            const newProfilePicture = await cloudinaryService.getInstance().uploadImage(profilePicture, CLOUDINARY_FOLDER.PROFILE_PICTURE);
+            user.profilePicture = {
+                publicId: newProfilePicture.public_id,
+                url: newProfilePicture.secure_url
+            };
             await user.save();
             return res.status(200).json({
-                newProfilePicture: user.profilePicture,
+                newProfilePicture: user.profilePicture.url,
                 message: "Change profile picture successfully."
             });
         } catch (error) {
@@ -44,31 +38,24 @@ class UserController {
     async changeProfileBanner(req, res) {
         try {
             const userId = req.user.userId;
-            const file = req.file;
+            const { profileBanner } = req.body;
 
             const user = await User.findById(userId);
             if (!user) {
                 return res.status(400).json({ message: "User not found." });
             }
 
-            // Lấy đường dẫn file hiện tại
-            const __filename = fileURLToPath(import.meta.url);
-
-            // Lấy đường dẫn thư mục hiện tại
-            const __dirname = path.dirname(__filename);
-
-            const url = user.profileBanner;
-            const parts = url.split('/');
-            const filename = parts[parts.length - 1];
-            if (filename !== "user.jpg") {
-                const folderPath = path.join(__dirname, '..', '..', 'public', 'profile-banner');
-                const filePath = path.join(folderPath, filename);
-                fs.unlinkSync(filePath);
+            if (user.profileBanner.publicId != process.env.DEFAULT_PROFILE_BANNER_PUBLIC_ID) {
+                const deleteResult = await cloudinaryService.getInstance().deleteImage(user.profileBanner.publicId);
             }
-            user.profileBanner = `${process.env.IMG_LINK}/profile-banner/${file.filename}`;
+            const newProfileBanner = await cloudinaryService.getInstance().uploadImage(profileBanner, CLOUDINARY_FOLDER.PROFILE_BANNER);
+            user.profileBanner = {
+                publicId: newProfileBanner.public_id,
+                url: newProfileBanner.secure_url
+            };
             await user.save();
             return res.status(200).json({
-                newProfilePicture: user.profileBanner,
+                newProfilePicture: user.profileBanner.url,
                 message: "Change profile banner successfully."
             });
         } catch (error) {
@@ -133,8 +120,8 @@ class UserController {
             }
             const today = new Date();
             return res.status(200).json({
-                profilePicture: user.profilePicture,
-                profileBanner: user.profileBanner,
+                profilePicture: user.profilePicture.url,
+                profileBanner: user.profileBanner.url,
                 username: user.username,
                 fullname: user.fullname,
                 about: user.about,
@@ -154,7 +141,7 @@ class UserController {
                 return res.status(400).json({ message: "User not found." });
             }
             return res.status(200).json({
-                profilePicture: user.profilePicture,
+                profilePicture: user.profilePicture.url,
                 username: user.username,
                 fullname: user.fullname
             });
@@ -214,7 +201,10 @@ class UserController {
             if (!data) {
                 return res.status(500).json({ message: "Failed to follow user" });
             }
-            return res.status(200).json({ message: "Followed successfully" });
+            return res.status(200).json({
+                message: "Followed successfully",
+                receiveNotification: data.receiveNotification
+            });
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }
@@ -241,10 +231,11 @@ class UserController {
                 return res.status(400).json({ message: "User not found." });
             }
             const numFollowers = await Follower.countDocuments({ user: user._id });
-            
+
             return res.status(200).json({
-                profilePicture: user.profilePicture,
-                profileBanner: user.profileBanner,
+                _id: user._id,
+                profilePicture: user.profilePicture.url,
+                profileBanner: user.profileBanner.url,
                 username: user.username,
                 fullname: user.fullname,
                 numFollowers: numFollowers
@@ -261,10 +252,63 @@ class UserController {
             if (!user) {
                 return res.status(400).json({ message: "User not found." });
             }
-            
+
             return res.status(200).json({
                 about: user.about,
                 links: user.links
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async getFollow(req, res) {
+        try {
+            const { userId, streamerId } = req.params;
+            const follow = await Follower.findOne({ user: userId, streamer: streamerId });
+
+            return res.status(200).json({
+                follow
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async toggleNotification(req, res) {
+        try {
+            const userId = req.user.userId;
+            const { streamerId } = req.body;
+            const follow = await Follower.findOneAndUpdate(
+                { user: userId, streamer: streamerId },
+                [{ $set: { receiveNotification: { $not: "$receiveNotification" } } }],
+                { new: true }
+            );
+
+            return res.status(200).json({
+                receiveNotification: follow.receiveNotification
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async unfollow(req, res) {
+        try {
+            const { streamerId } = req.params;
+            if (!streamerId) {
+                return res.status(400).json({ message: 'Please enter streamerId' });
+            }
+            const userId = req.user.userId;
+            const deletedFollow = await Follower.findOneAndDelete({
+                user: userId,
+                streamer: streamerId
+            });
+            if (!deletedFollow) {
+                return res.status(500).json({ message: "Failed to unfollow user" });
+            }
+            return res.status(200).json({
+                message: "Unollowed successfully"
             });
         } catch (error) {
             return res.status(500).json({ message: error.message });

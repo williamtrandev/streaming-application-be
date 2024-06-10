@@ -18,7 +18,7 @@ class SearchController {
                         { fullname: { $regex: key, $options: 'i' } }
                     ]
                 }));
-                const channels = await User.find({ $or: regexQueries.flat() })
+                const channels = await User.find({ $or: regexQueries.flat() }).select("profilePicture username fullname")
                 const sortedChannels = channels.sort((a, b) => {
                     const similarityA = calculateStringSimilarity(a.username, key) + calculateStringSimilarity(a.fullname, key);
                     const similarityB = calculateStringSimilarity(b.username, key) + calculateStringSimilarity(b.fullname, key);
