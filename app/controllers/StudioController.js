@@ -1,10 +1,9 @@
 import Stream from "../models/Stream.js";
 import Notification from "../models/Notification.js";
 import Follower from "../models/Follower.js";
-import { AccessToken } from 'livekit-server-sdk';
-import { v4 as uuidv4 } from 'uuid';
 import cloudinaryService from '../common/cloudinary.js';
-import { CLOUDINARY_FOLDER } from "../constants/index.js";
+import { CLOUDINARY_FOLDER, ROLE_MOD } from "../constants/index.js";
+import User from "../models/User.js";
 
 class StudioController {
 	async saveStream(req, res) {
@@ -170,7 +169,91 @@ class StudioController {
 		} catch (error) {
 			return res.status(500).json({ message: error.message });
 		}
-}
+	}
+
+	async getAllMods(req, res, next) {
+		try {
+			const userId = req?.user?.userId;
+			if (!userId) {
+				return res.status(403).json({ message: 'Forbidden access denied' });
+			}
+			const user = await User.findById(userId).populate('mods.user', '-password');
+			if (!user) {
+				return res.status(400).json({ message: 'User not found' });
+			}
+			const mods = user.mods;
+			return res.status(200).json({ data: mods });
+		} catch (error) {
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async addMod(req, res, next) {
+		try {
+			const userId = req?.user?.userId;
+			const { modId, role } = req.body;
+			if(!userId) {
+				return res.status(403).json({ message: 'Forbidden access denied' });
+			}
+			if(!modId) {
+				return res.status(400).json({ message: 'Please provide a valid mod id' });
+			}
+			const mod = await User.findById(modId);
+			if(!mod) {
+				return res.status(400).json({ message: 'User not found' });
+			}
+			const updatedUser = await User.findByIdAndUpdate(userId, {
+				$push: {
+					mods: {
+						user: modId,
+						role: role || ROLE_MOD.BD
+					}
+				}
+			})
+			if (!updatedUser) {
+				return res.status(500).json({ message: "Failed to add mod" });
+			}
+
+			return res.status(200).json({
+				message: "Add mod successfully",
+				user: updatedUser
+			});
+		} catch (error) {
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async deleteMod(req, res, next) {
+		try {
+			const userId = req?.user?.userId;
+			const { modId } = req.params; 
+
+			if (!userId) {
+				return res.status(403).json({ message: 'Forbidden access denied' });
+			}
+			if (!modId) {
+				return res.status(400).json({ message: 'Please provide a valid mod id' });
+			}
+
+			const updatedUser = await User.findByIdAndUpdate(userId, {
+				$pull: {
+					mods: { user: modId } 
+				}
+			}, { new: true });
+
+			if (!updatedUser) {
+				return res.status(500).json({ message: "Failed to delete mod" });
+			}
+
+			return res.status(200).json({
+				message: "Delete mod successfully",
+				user: updatedUser
+			});
+		} catch (error) {
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
 }
 
 export default new StudioController();

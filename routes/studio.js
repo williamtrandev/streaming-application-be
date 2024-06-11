@@ -12,5 +12,8 @@ router.get('/stream/:streamId', studioController.getDetailStream);
 router.put('/stream/:streamId', verifyToken, studioController.editStream);
 router.delete('/stream/:streamId', verifyToken, studioController.deleteStream);
 router.get('/coming-streams', verifyToken, studioController.getAllComingStreams);
+router.get('/mod', verifyToken, studioController.getAllMods);
+router.post('/mod', verifyToken, studioController.addMod);
+router.delete('/mod/:modId', verifyToken, studioController.deleteMod);
 
 export default router;
