@@ -1,6 +1,20 @@
 import mongoose from 'mongoose';
+import { ROLE_MOD } from '../constants/index.js';
 
 const { Schema } = mongoose;
+
+const ModSchema = new Schema({
+	user: {
+		type: Schema.Types.ObjectId,
+		ref: 'User',
+		required: true
+	},
+	role: {
+		type: String,
+		required: true,
+		default: ROLE_MOD.BD
+	},
+}, { timestamps: true });
 
 const UserSchema = new Schema({
 	email: {
@@ -38,7 +52,8 @@ const UserSchema = new Schema({
 	lastChangeUsername: {
 		type: Date,
 		default: Date.now
-	}
+	},
+	mods: [ModSchema]
 }, { timestamps: true });
 
 // Tạo text index

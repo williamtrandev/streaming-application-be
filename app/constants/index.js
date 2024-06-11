@@ -7,4 +7,8 @@ export const CLOUDINARY_FOLDER = {
 	STUDIO: 'studio',
 	PROFILE_BANNER: 'profile_banner',
 	PROFILE_PICTURE: 'profile_picture',
-}
+};
+
+export const ROLE_MOD = {
+	BD: 'ban_and_delete'
+};
