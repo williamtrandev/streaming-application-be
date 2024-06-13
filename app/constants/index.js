@@ -7,6 +7,10 @@ export const CLOUDINARY_FOLDER = {
 	STUDIO: 'studio',
 	PROFILE_BANNER: 'profile_banner',
 	PROFILE_PICTURE: 'profile_picture',
-}
+};
 
-export const FETCH_LIMIT = 60
+export const FETCH_LIMIT = 60;
+
+export const ROLE_MOD = {
+	BD: 'ban_and_delete'
+};

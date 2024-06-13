@@ -4,8 +4,9 @@ import { verifyToken } from '../app/middlewares/verifyToken.js';
 
 const router = express.Router();
 
-router.get('/user', searchController.searchChannels);
+router.get('/channel', searchController.searchChannels);
 router.get('/stream', searchController.searchStreams);
 router.get('/history', verifyToken, searchController.searchHistory);
+router.get('/user', searchController.searchUsers);
 
 export default router;
