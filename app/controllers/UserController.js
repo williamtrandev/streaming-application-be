@@ -14,7 +14,7 @@ class UserController {
 
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(404).json({ message: "User not found" });
             }
 
             if (user.profilePicture.publicId != process.env.DEFAULT_PROFILE_PICTURE_PUBLIC_ID) {
@@ -28,7 +28,7 @@ class UserController {
             await user.save();
             return res.status(200).json({
                 newProfilePicture: user.profilePicture.url,
-                message: "Change profile picture successfully."
+                message: "Change profile picture successfully"
             });
         } catch (error) {
             return res.status(500).json({ message: error.message });
@@ -42,7 +42,7 @@ class UserController {
 
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(404).json({ message: "User not found" });
             }
 
             if (user.profileBanner.publicId != process.env.DEFAULT_PROFILE_BANNER_PUBLIC_ID) {
@@ -56,7 +56,7 @@ class UserController {
             await user.save();
             return res.status(200).json({
                 newProfilePicture: user.profileBanner.url,
-                message: "Change profile banner successfully."
+                message: "Change profile banner successfully"
             });
         } catch (error) {
             return res.status(500).json({ message: error.message });
@@ -68,17 +68,17 @@ class UserController {
             const userId = req.user.userId;
             const newDisplayName = req.body.newDisplayName;
             if (!newDisplayName) {
-                return res.status(400).json({ message: "Please enter new display name." });
+                return res.status(400).json({ message: "Please enter new display name" });
             }
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(404).json({ message: "User not found" });
             }
             user.fullname = newDisplayName;
             await user.save();
             return res.status(200).json({
                 newDisplayName: user.fullname,
-                message: "Change display name successfully."
+                message: "Change display name successfully"
             });
         } catch (error) {
             return res.status(500).json({ message: error.message });
@@ -90,11 +90,11 @@ class UserController {
             const userId = req.user.userId;
             const { fullname, about } = req.body;
             if (!fullname || !about) {
-                return res.status(400).json({ message: "Please enter new display name and new about." });
+                return res.status(400).json({ message: "Please enter new display name and new about" });
             }
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(404).json({ message: "User not found" });
             }
             user.fullname = fullname;
             user.about = about;
@@ -104,7 +104,7 @@ class UserController {
                     fullname: user.fullname,
                     about: user.about
                 },
-                message: "Change user's informations successfully."
+                message: "Change user's informations successfully"
             });
         } catch (error) {
             return res.status(500).json({ message: error.message });
@@ -116,7 +116,7 @@ class UserController {
             const { userId } = req.params;
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(404).json({ message: "User not found" });
             }
             const today = new Date();
             return res.status(200).json({
@@ -138,7 +138,7 @@ class UserController {
             const { userId } = req.params;
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(404).json({ message: "User not found" });
             }
             return res.status(200).json({
                 profilePicture: user.profilePicture.url,
@@ -155,17 +155,17 @@ class UserController {
             const userId = req.user.userId;
             const { links } = req.body;
             if (!links) {
-                return res.status(400).json({ message: "Please enter new social links." });
+                return res.status(400).json({ message: "Please enter new social links" });
             }
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(404).json({ message: "User not found" });
             }
             user.links = links;
             await user.save();
             return res.status(200).json({
                 newLinks: links,
-                message: "Change user's social links successfully."
+                message: "Change user's social links successfully"
             });
         } catch (error) {
             return res.status(500).json({ message: error.message });
@@ -177,7 +177,7 @@ class UserController {
             const { userId } = req.params;
             const user = await User.findById(userId);
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(404).json({ message: "User not found" });
             }
             return res.status(200).json({
                 email: user.email
@@ -228,7 +228,7 @@ class UserController {
             const { username } = req.params;
             const user = await User.findOne({ username: username });
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(404).json({ message: "User not found" });
             }
             const numFollowers = await Follower.countDocuments({ user: user._id });
 
@@ -250,7 +250,7 @@ class UserController {
             const { username } = req.params;
             const user = await User.findOne({ username: username });
             if (!user) {
-                return res.status(400).json({ message: "User not found." });
+                return res.status(404).json({ message: "User not found" });
             }
 
             return res.status(200).json({
