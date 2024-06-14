@@ -49,6 +49,10 @@ const UserSchema = new Schema({
 		title: String,
 		link: String
 	}],
+	isLive: {
+		type: Boolean,
+		default: false
+	},
 	lastChangeUsername: {
 		type: Date,
 		default: Date.now

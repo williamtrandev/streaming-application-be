@@ -4,9 +4,10 @@ import streamController from '../app/controllers/StreamController.js';
 
 const router = express.Router();
 
-router.get("/history/:page", verifyToken, streamController.getViewedStream);
-router.get("/liked/:page", verifyToken, streamController.getLikedStream);
+router.get("/history/:page", verifyToken, streamController.getViewedStreams);
+router.get("/liked/:page", verifyToken, streamController.getLikedStreams);
 router.get("/saved/:username/:page", streamController.getSavedStreams);
 router.get("/home/:username", streamController.getStreamerHomeStreams);
+router.get("/following/:page", verifyToken, streamController.getFollowingStreams);
 
 export default router;

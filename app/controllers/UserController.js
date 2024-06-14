@@ -5,6 +5,7 @@ import path from "path";
 import Follower from "../models/Follower.js";
 import cloudinaryService from '../common/cloudinary.js';
 import { CLOUDINARY_FOLDER } from "../constants/index.js";
+import { Types } from "mongoose";
 
 class UserController {
     async changeProfilePicture(req, res) {
@@ -212,12 +213,42 @@ class UserController {
 
     async getFollowedChannels(req, res, next) {
         try {
-            const userId = req.user.userId;
-            const followers = await Follower.find({
-                user: userId
-            });
-            console.log(followers);
-            return res.status(200).json({ message: "Followed successfully" });
+            const userId = req.params.userId;
+            const followers = await Follower.aggregate([
+                {
+                    $match: {
+                        user: Types.ObjectId.createFromHexString(userId)
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'streamer',
+                        foreignField: '_id',
+                        as: 'streamer'
+                    }
+                },
+                {
+                    $unwind: '$streamer'
+                },
+                {
+                    $sort: {
+                        'streamer.isLive': -1,
+                        'streamer.updatedAt': -1
+                    }
+                },
+                {
+                    $project: {
+                        'streamer._id': 1,
+                        'streamer.username': 1,
+                        'streamer.fullname': 1,
+                        'streamer.profilePicture': 1,
+                        'streamer.isLive': 1,
+                        'streamer.updatedAt': 1
+                    }
+                }
+            ]);
+            return res.status(200).json({ followedChannels: followers });
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }

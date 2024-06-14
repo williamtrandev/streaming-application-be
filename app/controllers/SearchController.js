@@ -30,7 +30,13 @@ class SearchController {
             //     return res.status(200).json({ channels: sortedChannels });
             // } else {
             const channels = await User.find({
-            }).sort({ numViews: -1 });
+                $or: [
+                    { username: { $regex: key, $options: 'i' } },
+                    { fullname: { $regex: key, $options: 'i' } }
+                ]
+            })
+                .select("username fullname profilePicture")
+                .sort({ numViews: -1 });
             return res.status(200).json({ channels: channels });
             // }
         } catch (error) {
@@ -68,7 +74,12 @@ class SearchController {
                     { title: { $regex: key, $options: 'i' } },
                     { tags: { $in: [key] } }
                 ]
-            }).sort({ numViews: -1 })
+            })
+                .populate({
+                    path: 'user',
+                    select: 'username fullname profilePicture'
+                })
+                .sort({ numViews: -1 })
                 .skip((page - 1) * FETCH_LIMIT)
                 .limit(FETCH_LIMIT);
             return res.status(200).json({ streams: streams });
@@ -108,6 +119,17 @@ class SearchController {
                     }
                 },
                 {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'streamInfo.user',
+                        foreignField: '_id',
+                        as: 'streamInfo.user'
+                    }
+                },
+                {
+                    $unwind: '$streamInfo.user'
+                },
+                {
                     $project: {
                         _id: 1,
                         user: 1,
@@ -117,7 +139,10 @@ class SearchController {
                         'streamInfo.tags': 1,
                         'streamInfo.previewImage': 1,
                         'streamInfo.numViews': 1,
-                        'streamInfo.dateStream': 1
+                        'streamInfo.dateStream': 1,
+                        'streamInfo.user.username': 1,
+                        'streamInfo.user.fullname': 1,
+                        'streamInfo.user.profilePicture': 1
                     }
                 },
                 {
@@ -129,6 +154,7 @@ class SearchController {
             ]);
             return res.status(200).json({ histories: searchedHistory });
         } catch (error) {
+            console.log(error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -159,7 +185,7 @@ class SearchController {
             if (excludedUserIds.length > 0) {
                 channels = channels.where('_id').nin(excludedUserIds);
             }
-            if(limit) {
+            if (limit) {
                 channels = channels.limit(limit);
             }
             channels = await channels.exec();

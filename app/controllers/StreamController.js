@@ -1,4 +1,5 @@
 import { FETCH_LIMIT } from "../constants/index.js";
+import Follower from "../models/Follower.js";
 import History from "../models/History.js";
 import Stream from "../models/Stream.js";
 import User from "../models/User.js";
@@ -31,7 +32,11 @@ class StreamController {
                 .sort({ numViews: -1 }).limit(20);
             const mostLikedStreams = await Stream.find({ user: user._id, duration: { $gt: 0 } })
                 .sort({ numLikes: -1 }).limit(20);
-            const currentStream = await Stream.findOne({ user: user._id, started: true, duration: 0 });
+            const currentStream = await Stream.findOne({ user: user._id, started: true, duration: 0 })
+                .populate({
+                    path: "user",
+                    select: "username fullname profilePicture"
+                });
             return res.status(200).json({
                 mostViewedStreams,
                 mostLikedStreams,
@@ -42,7 +47,7 @@ class StreamController {
         }
     }
 
-    async getViewedStream(req, res) {
+    async getViewedStreams(req, res) {
         try {
             const userId = req.user.userId;
             const { page } = req.params;
@@ -62,12 +67,18 @@ class StreamController {
         }
     }
 
-    async getLikedStream(req, res) {
+    async getLikedStreams(req, res) {
         try {
             const userId = req.user.userId;
             const { page } = req.params;
             const histories = await History.find({ user: userId, liked: true })
-                .populate("stream")
+                .populate({
+                    path: "stream",
+                    populate: {
+                        path: "user",
+                        select: "username profilePicture fullname"
+                    }
+                })
                 .skip((page - 1) * FETCH_LIMIT)
                 .limit(FETCH_LIMIT);
             if (!histories) {
@@ -76,6 +87,27 @@ class StreamController {
             // const streams = histories.map(history => history.stream);
             return res.status(200).json({
                 histories
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async getFollowingStreams(req, res) {
+        try {
+            const userId = req.user.userId;
+            const { page } = req.params;
+            const followedStreamers = await Follower.find({ user: userId }).select('streamer');
+            const streamerIds = followedStreamers.map(follow => follow.streamer);
+            const streams = await Stream.find({ user: { $in: streamerIds } })
+                .populate({
+                    path: "user",
+                    select: "username fullname profilePicture"
+                })
+                .skip((page - 1) * FETCH_LIMIT)
+                .limit(FETCH_LIMIT);
+            return res.status(200).json({
+                streams
             });
         } catch (error) {
             return res.status(500).json({ message: error.message });

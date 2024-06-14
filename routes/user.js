@@ -12,7 +12,7 @@ router.get('/profile/:userId', userController.getProfile);
 router.get('/mini-profile/:userId', userController.getMiniProfile);
 router.put('/change-links', verifyToken, userController.changeLinks);
 router.get('/email/:userId', userController.getEmail);
-router.get('/followed-channels', verifyToken, userController.getFollowedChannels);
+router.get('/followed-channels/:userId', userController.getFollowedChannels);
 router.get('/channel/:username', userController.getStreamerProfile);
 router.get('/about/:username', userController.getStreamerABout);
 router.get('/follow/:userId/:streamerId', userController.getFollow);
