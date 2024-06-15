@@ -1,9 +1,9 @@
 import Stream from "../models/Stream.js";
 import Notification from "../models/Notification.js";
 import Follower from "../models/Follower.js";
-import cloudinaryService from '../common/cloudinary.js';
-import { CLOUDINARY_FOLDER, ROLE_MOD } from "../constants/index.js";
+import { S3_PATH, ROLE_MOD } from "../constants/index.js";
 import User from "../models/User.js";
+import { getObjectURL, putImageObject } from "../common/s3.js";
 
 class StudioController {
 	async saveStream(req, res) {
@@ -12,25 +12,27 @@ class StudioController {
 			if (!userId || !title || !description || !dateStream) {
 				return res.status(400).json({ message: "Please enter userId, title, description, dateStream" });
 			}
-			const newPreviewImage = await cloudinaryService.getInstance().uploadImage(previewImage, CLOUDINARY_FOLDER.STUDIO);
 			const data = await Stream.create({
 				user: userId,
 				title: title,
 				description: description,
 				dateStream: dateStream,
-				tags: tags,
-				previewImage: {
-					publicId: newPreviewImage.public_id,
-					url: newPreviewImage.secure_url
-				}
+				tags: tags
 			});
 			if (!data) {
 				return res.status(500).json({ message: "Failed to create stream" });
 			}
-			
+			const base64Data = new Buffer.from(previewImage.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+			const type = previewImage.split(';')[0].split('/')[1];
+			const imageKey = `${S3_PATH.STUDIO}/${data._id}.${type}`;
+			await putImageObject(imageKey, base64Data);
+			const contentType = `image/${type}`;
+			const updatedData = await Stream.findByIdAndUpdate(data._id, { 
+				$set: { "s3.key": imageKey, "s3.contentType": contentType } 
+			});
 			return res.status(201).json({
 				message: "Create stream successfully",
-				stream: data
+				stream: updatedData
 			});
 		} catch (error) {
 			return res.status(500).json({ message: error.message });
@@ -94,10 +96,15 @@ class StudioController {
 				error.status = 400;
 				return next(error);
 			}
+			const previewImage = await getObjectURL(stream?.s3?.key, stream?.s3?.contentType);
 			return res.status(200).json({
-				stream: stream
+				stream: {
+					...stream,
+					previewImage
+				}
 			})
 		} catch (error) {
+			console.log(error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -128,22 +135,27 @@ class StudioController {
 			if (!currentStream) {
 				return res.status(404).json({ message: "Stream not found" });
 			}
-			let newPreviewImage = {};
+			var s3Update = {}
 			if (previewImage) {
-				newPreviewImage = await cloudinaryService.getInstance().uploadImage(previewImage, 'studio');
-				if (currentStream.previewImage && currentStream.previewImage.publicId) {
-					await cloudinaryService.getInstance().deleteImage(currentStream.previewImage.publicId);
+				const base64Data = new Buffer.from(previewImage.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+				const type = previewImage.split(';')[0].split('/')[1];
+				const imageKey = `${S3_PATH.STUDIO}/${currentStream._id}.${type}`;
+				await putImageObject(imageKey, base64Data);
+				const contentType = `image/${type}`;
+				s3Update = {
+					s3: {
+						key: imageKey, 
+						contentType: contentType
+					}
 				}
-			} else {
-				newPreviewImage = currentStream.previewImage;
-			}
+			} 
 			const updatedData = await Stream.findByIdAndUpdate(streamId, {
 				title: title,
 				description: description,
 				dateStream: dateStream,
 				tags: tags,
-				previewImage: newPreviewImage,
-				rerun: rerun
+				rerun: rerun,
+				...s3Update
 			}, { new: true });
 			if (!updatedData) {
 				return res.status(500).json({ message: "Failed to update stream" });

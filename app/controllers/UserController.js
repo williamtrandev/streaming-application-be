@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import Follower from "../models/Follower.js";
 import { fileURLToPath } from 'url';
+import { getObjectURL } from "../common/s3.js";
 
 class UserController {
     async changeProfilePicture(req, res) {
