@@ -35,12 +35,12 @@ const UserSchema = new Schema({
 		required: true
 	},
 	profilePicture: {
-		publicId: String,
-		url: String
+		key: String,
+		contentType: String
 	},
 	profileBanner: {
-		publicId: String,
-		url: String
+		key: String,
+		contentType: String
 	},
 	about: {
 		type: String

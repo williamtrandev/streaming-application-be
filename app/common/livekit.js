@@ -1,6 +1,86 @@
-import { EgressClient, EncodedFileOutput, EncodedFileType, S3Upload } from "livekit-server-sdk";
+import { EgressClient, EncodedFileOutput, EncodedFileType, S3Upload, AccessToken, IngressAudioEncodingPreset, IngressClient, IngressInput, IngressVideoEncodingPreset, RoomServiceClient, TrackSource } from "livekit-server-sdk";
 import dotenv from 'dotenv';
 dotenv.config();
+
+const generateStreamerToken = async (streamId) => {
+	const token = new AccessToken(
+		process.env.LIVEKIT_API_KEY,
+		process.env.LIVEKIT_API_SECRET,
+		{
+			identity: streamId,
+		}
+	);
+	token.addGrant({
+		room: streamId,
+		roomJoin: true,
+		canPublish: true,
+		canPublishData: true,
+	});
+	return await token.toJwt();
+}
+
+const generateViewerToken = async (streamId, userId) => {
+	const token = new AccessToken(
+		process.env.LIVEKIT_API_KEY,
+		process.env.LIVEKIT_API_SECRET,
+		{
+			identity: userId,
+		}
+	);
+
+	token.addGrant({
+		room: streamId,
+		roomJoin: true,
+		canPublish: false,
+		canPublishData: true,
+	});
+	return await token.toJwt();
+}
+
+const roomService = new RoomServiceClient(
+    process.env.LIVEKIT_API_URL,
+    process.env.LIVEKIT_API_KEY,
+    process.env.LIVEKIT_API_SECRET
+);
+
+const ingressClient = new IngressClient(
+    process.env.LIVEKIT_API_URL
+);
+
+const resetIngresses = async (hostId) => {
+    const ingresses = await ingressClient.listIngress({ roomName: hostId });
+    const rooms = await roomService.listRooms([hostId]);
+    for (const room of rooms) {
+        await roomService.deleteRoom(room.name);
+    }
+    for (const ingress of ingresses) {
+        if (ingress.ingressId) {
+            await ingressClient.deleteIngress(ingress.ingressId);
+        }
+    }
+}
+
+const createIngress = async (streamId, username) => {
+    resetIngresses(streamId);
+
+    const options = {
+        name: username,
+        roomName: streamId,
+        participantIdentity: streamId,
+        participantName: username,
+        video: {
+            source: TrackSource.SCREEN_SHARE,
+            preset: IngressVideoEncodingPreset.H264_1080P_30FPS_3_LAYERS
+        },
+        audio: {
+            source: TrackSource.SCREEN_SHARE_AUDIO,
+            preset: IngressAudioEncodingPreset.OPUS_STEREO_96KBPS
+        }
+    };
+
+    const ingress = await ingressClient.createIngress(IngressInput.RTMP_INPUT, options);
+    return ingress;
+}
 
 const startRecord = async (streamId) => {
 	try {
@@ -46,4 +126,7 @@ const endRecord = async (egressId) => {
 export {
 	startRecord,
 	endRecord,
+    generateStreamerToken,
+    generateViewerToken,
+    createIngress
 }
