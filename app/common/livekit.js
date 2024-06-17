@@ -1,4 +1,39 @@
-import { IngressAudioEncodingPreset, IngressClient, IngressInput, IngressVideoEncodingPreset, RoomServiceClient, TrackSource } from "livekit-server-sdk";
+import { AccessToken, IngressAudioEncodingPreset, IngressClient, IngressInput, IngressVideoEncodingPreset, RoomServiceClient, TrackSource } from "livekit-server-sdk";
+
+const generateStreamerToken = async (streamId) => {
+	const token = new AccessToken(
+		process.env.LIVEKIT_API_KEY,
+		process.env.LIVEKIT_API_SECRET,
+		{
+			identity: streamId,
+		}
+	);
+	token.addGrant({
+		room: streamId,
+		roomJoin: true,
+		canPublish: true,
+		canPublishData: true,
+	});
+	return await token.toJwt();
+}
+
+const generateViewerToken = async (streamId, userId) => {
+	const token = new AccessToken(
+		process.env.LIVEKIT_API_KEY,
+		process.env.LIVEKIT_API_SECRET,
+		{
+			identity: userId,
+		}
+	);
+
+	token.addGrant({
+		room: streamId,
+		roomJoin: true,
+		canPublish: false,
+		canPublishData: true,
+	});
+	return await token.toJwt();
+}
 
 const roomService = new RoomServiceClient(
     process.env.LIVEKIT_API_URL,
@@ -8,15 +43,11 @@ const roomService = new RoomServiceClient(
 
 const ingressClient = new IngressClient(
     process.env.LIVEKIT_API_URL
-    // process.env.LIVEKIT_API_KEY,
-    // process.env.LIVEKIT_API_SECRET
 );
 
-export const resetIngresses = async (hostId) => {
+const resetIngresses = async (hostId) => {
     const ingresses = await ingressClient.listIngress({ roomName: hostId });
     const rooms = await roomService.listRooms([hostId]);
-    // console.log(rooms);
-    // try {
     for (const room of rooms) {
         await roomService.deleteRoom(room.name);
     }
@@ -25,12 +56,9 @@ export const resetIngresses = async (hostId) => {
             await ingressClient.deleteIngress(ingress.ingressId);
         }
     }
-    // } catch (error) {
-    //     console.log(error);
-    // }
 }
 
-export const createIngress = async (streamId, username) => {
+const createIngress = async (streamId, username) => {
     resetIngresses(streamId);
 
     const options = {
@@ -50,4 +78,10 @@ export const createIngress = async (streamId, username) => {
 
     const ingress = await ingressClient.createIngress(IngressInput.RTMP_INPUT, options);
     return ingress;
+}
+
+export {
+    generateStreamerToken,
+    generateViewerToken,
+    createIngress
 }

@@ -3,7 +3,7 @@ import Notification from "../models/Notification.js";
 import Follower from "../models/Follower.js";
 import { S3_PATH, ROLE_MOD } from "../constants/index.js";
 import User from "../models/User.js";
-import { createIngress } from "../common/ingress.js";
+import { createIngress, generateStreamerToken, generateViewerToken } from "../common/livekit.js";
 import { getObjectURL, putImageObject } from "../common/s3.js";
 
 
@@ -276,6 +276,33 @@ class StudioController {
 			return res.status(200).json({
 				serverUrl: ingress.url,
 				streamKey: ingress.streamKey
+			});
+		} catch (error) {
+			console.log(error);
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async getStreamerToken(req, res) {
+		try {
+			const { streamId } = req.body;
+			const token = await generateStreamerToken(streamId);
+			return res.status(200).json({
+				token
+			});
+		} catch (error) {
+			console.log(error);
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async getViewerToken(req, res) {
+		try {
+			const { streamId } = req.body;
+			const userId = req.user.userId;
+			const token = await generateViewerToken(streamId, userId);
+			return res.status(200).json({
+				token
 			});
 		} catch (error) {
 			console.log(error);

@@ -1,69 +1,66 @@
 import User from "../models/User.js";
 import redisClient from '../common/redis.js';
-import fs from "fs";
-import path from "path";
 import Follower from "../models/Follower.js";
 import cloudinaryService from '../common/cloudinary.js';
-import { CLOUDINARY_FOLDER } from "../constants/index.js";
 import { Types } from "mongoose";
 import { fileURLToPath } from 'url';
 import { getObjectURL } from "../common/s3.js";
 
 class UserController {
     async changeProfilePicture(req, res) {
-        try {
-            const userId = req.user.userId;
-            const { profilePicture } = req.body;
+        // try {
+        //     const userId = req.user.userId;
+        //     const { profilePicture } = req.body;
 
-            const user = await User.findById(userId);
-            if (!user) {
-                return res.status(404).json({ message: "User not found" });
-            }
+        //     const user = await User.findById(userId);
+        //     if (!user) {
+        //         return res.status(404).json({ message: "User not found" });
+        //     }
 
-            if (user.profilePicture.publicId != process.env.DEFAULT_PROFILE_PICTURE_PUBLIC_ID) {
-                const deleteResult = await cloudinaryService.getInstance().deleteImage(user.profilePicture.publicId);
-            }
-            const newProfilePicture = await cloudinaryService.getInstance().uploadImage(profilePicture, CLOUDINARY_FOLDER.PROFILE_PICTURE);
-            user.profilePicture = {
-                publicId: newProfilePicture.public_id,
-                url: newProfilePicture.secure_url
-            };
-            await user.save();
-            return res.status(200).json({
-                newProfilePicture: user.profilePicture.url,
-                message: "Change profile picture successfully"
-            });
-        } catch (error) {
-            return res.status(500).json({ message: error.message });
-        }
+        //     if (user.profilePicture.publicId != process.env.DEFAULT_PROFILE_PICTURE_PUBLIC_ID) {
+        //         const deleteResult = await cloudinaryService.getInstance().deleteImage(user.profilePicture.publicId);
+        //     }
+        //     const newProfilePicture = await cloudinaryService.getInstance().uploadImage(profilePicture, CLOUDINARY_FOLDER.PROFILE_PICTURE);
+        //     user.profilePicture = {
+        //         publicId: newProfilePicture.public_id,
+        //         url: newProfilePicture.secure_url
+        //     };
+        //     await user.save();
+        //     return res.status(200).json({
+        //         newProfilePicture: user.profilePicture.url,
+        //         message: "Change profile picture successfully"
+        //     });
+        // } catch (error) {
+        //     return res.status(500).json({ message: error.message });
+        // }
     }
 
     async changeProfileBanner(req, res) {
-        try {
-            const userId = req.user.userId;
-            const { profileBanner } = req.body;
+        // try {
+        //     const userId = req.user.userId;
+        //     const { profileBanner } = req.body;
 
-            const user = await User.findById(userId);
-            if (!user) {
-                return res.status(404).json({ message: "User not found" });
-            }
+        //     const user = await User.findById(userId);
+        //     if (!user) {
+        //         return res.status(404).json({ message: "User not found" });
+        //     }
 
-            if (user.profileBanner.publicId != process.env.DEFAULT_PROFILE_BANNER_PUBLIC_ID) {
-                const deleteResult = await cloudinaryService.getInstance().deleteImage(user.profileBanner.publicId);
-            }
-            const newProfileBanner = await cloudinaryService.getInstance().uploadImage(profileBanner, CLOUDINARY_FOLDER.PROFILE_BANNER);
-            user.profileBanner = {
-                publicId: newProfileBanner.public_id,
-                url: newProfileBanner.secure_url
-            };
-            await user.save();
-            return res.status(200).json({
-                newProfilePicture: user.profileBanner.url,
-                message: "Change profile banner successfully"
-            });
-        } catch (error) {
-            return res.status(500).json({ message: error.message });
-        }
+        //     if (user.profileBanner.publicId != process.env.DEFAULT_PROFILE_BANNER_PUBLIC_ID) {
+        //         const deleteResult = await cloudinaryService.getInstance().deleteImage(user.profileBanner.publicId);
+        //     }
+        //     const newProfileBanner = await cloudinaryService.getInstance().uploadImage(profileBanner, CLOUDINARY_FOLDER.PROFILE_BANNER);
+        //     user.profileBanner = {
+        //         publicId: newProfileBanner.public_id,
+        //         url: newProfileBanner.secure_url
+        //     };
+        //     await user.save();
+        //     return res.status(200).json({
+        //         newProfilePicture: user.profileBanner.url,
+        //         message: "Change profile banner successfully"
+        //     });
+        // } catch (error) {
+        //     return res.status(500).json({ message: error.message });
+        // }
     }
 
     async changeDisplayName(req, res) {
