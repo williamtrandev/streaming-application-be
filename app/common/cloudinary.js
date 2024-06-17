@@ -27,6 +27,16 @@ class CloudinaryService {
 		}
 	}
 
+	async deleteImage(publicId) {
+		try {
+			const result = await cloudinary.uploader.destroy(publicId);
+			return result;
+		} catch (error) {
+			console.error('Lỗi khi xóa hình ảnh:', error);
+			throw error;
+		}
+	}
+
 	getOptimizedUrl(publicId) {
 		return cloudinary.url(publicId, {
 			fetch_format: 'auto',

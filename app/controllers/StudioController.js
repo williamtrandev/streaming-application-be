@@ -3,7 +3,9 @@ import Notification from "../models/Notification.js";
 import Follower from "../models/Follower.js";
 import { S3_PATH, ROLE_MOD } from "../constants/index.js";
 import User from "../models/User.js";
+import { createIngress } from "../common/ingress.js";
 import { getObjectURL, putImageObject } from "../common/s3.js";
+
 
 class StudioController {
 	async saveStream(req, res) {
@@ -266,6 +268,20 @@ class StudioController {
 		}
 	}
 
+	async getServerUrlAndStreamKey(req, res) {
+		try {
+			const { username, streamId } = req.params
+			const ingress = await createIngress(streamId, username);
+
+			return res.status(200).json({
+				serverUrl: ingress.url,
+				streamKey: ingress.streamKey
+			});
+		} catch (error) {
+			console.log(error);
+			return res.status(500).json({ message: error.message });
+		}
+	}
 }
 
 export default new StudioController();

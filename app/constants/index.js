@@ -9,6 +9,8 @@ export const S3_PATH = {
 	PROFILE_PICTURE: 'profile_picture',
 };
 
+export const FETCH_LIMIT = 24;
+
 export const ROLE_MOD = {
 	BD: 'ban_and_delete'
 };

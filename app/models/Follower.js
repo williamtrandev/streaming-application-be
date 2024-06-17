@@ -15,7 +15,7 @@ const FollowerSchema = new Schema({
 	},
 	receiveNotification: {
 		type: Boolean,
-		default: false
+		default: true
 	}
 }, { timestamps: true });
 

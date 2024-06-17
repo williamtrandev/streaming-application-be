@@ -35,12 +35,12 @@ const UserSchema = new Schema({
 		required: true
 	},
 	profilePicture: {
-		type: String,
-		default: "http://localhost:3000/profile-picture/user.jpg"
+		publicId: String,
+		url: String
 	},
 	profileBanner: {
-		type: String,
-		default: "http://localhost:3000/profile-banner/user.jpg"
+		publicId: String,
+		url: String
 	},
 	about: {
 		type: String
@@ -49,15 +49,16 @@ const UserSchema = new Schema({
 		title: String,
 		link: String
 	}],
+	isLive: {
+		type: Boolean,
+		default: false
+	},
 	lastChangeUsername: {
 		type: Date,
 		default: Date.now
 	},
 	mods: [ModSchema]
 }, { timestamps: true });
-
-// Tạo text index
-UserSchema.index({ username: 'text', fullname: 'text' });
 
 const User = mongoose.model('User', UserSchema);
 
