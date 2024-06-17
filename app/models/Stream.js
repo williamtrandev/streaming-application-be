@@ -52,6 +52,10 @@ const StreamSchema = new Schema({
 	s3: {
 		key: String,
 		contentType: String
+	},
+	finished: {
+		type: Boolean,
+		default: false
 	}
 }, { timestamps: true });
 
