@@ -11,6 +11,8 @@ router.get('/notification', verifyToken, studioController.getNotification);
 router.get('/stream/:streamId', studioController.getDetailStream);
 router.put('/stream/:streamId', verifyToken, studioController.editStream);
 router.delete('/stream/:streamId', verifyToken, studioController.deleteStream);
+router.put('/stream/:streamId/start', verifyToken, studioController.startStream);
+router.put('/stream/:streamId/end/:egressId', verifyToken, studioController.endStream);
 router.get('/coming-streams', verifyToken, studioController.getAllComingStreams);
 router.get('/mod', verifyToken, studioController.getAllMods);
 router.post('/mod', verifyToken, studioController.addMod);
