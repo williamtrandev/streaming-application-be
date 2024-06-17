@@ -36,9 +36,9 @@ const sendMailToUser = async (email, subject, template, context) => {
 
 	try {
 		await transporter.sendMail(mailOptions);
-		console.log(`Email sent successfully to ${user.email}`);
+		console.log(`Email sent successfully to ${email}`);
 	} catch (error) {
-		console.error(`Error sending email to ${user.email}:`, error);
+		console.error(`Error sending email to ${email}:`, error);
 		throw error;
 	}
 };
