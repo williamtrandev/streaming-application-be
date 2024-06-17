@@ -4,6 +4,7 @@ import Follower from "../models/Follower.js";
 import { S3_PATH, ROLE_MOD } from "../constants/index.js";
 import User from "../models/User.js";
 import { getObjectURL, putImageObject } from "../common/s3.js";
+import { endRecord, startRecord } from "../common/livekit.js";
 
 class StudioController {
 	async saveStream(req, res) {
@@ -266,6 +267,39 @@ class StudioController {
 		}
 	}
 
+	async startStream(req, res, next) {
+		try {
+			const streamId = req.params.streamId;
+			const stream = await Stream.findByIdAndUpdate(streamId, { started: true });
+			const egressId = await startRecord(streamId);
+			return res.status(200).json({
+				stream,
+				egressId
+			});
+		} catch (error) {
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async endStream(req, res, next) {
+		try {
+			const { streamId, egressId } = req.params;
+			const stream = await Stream.findByIdAndUpdate(streamId, { finished: true });
+			await endRecord(egressId);
+			return res.status(200).json({
+				stream
+			});
+		} catch (error) {
+			return res.status(500).json({ message: error.message });
+		}
+	}
+	// async statsNewFollowerAndSubs(req, res, next) {
+	// 	try {
+	// 		const latestStream = await Stream.
+	// 	} catch (error) {
+	// 		return res.status(500).json({ message: error.message });
+	// 	}
+	// }
 }
 
 export default new StudioController();
