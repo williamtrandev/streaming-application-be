@@ -49,9 +49,9 @@ const StreamSchema = new Schema({
 		type: Boolean,
 		default: false
 	},
-	previewImage: {
-		publicId: String,
-		url: String
+	s3: {
+		key: String,
+		contentType: String
 	}
 }, { timestamps: true });
 

@@ -6,6 +6,8 @@ import Follower from "../models/Follower.js";
 import cloudinaryService from '../common/cloudinary.js';
 import { CLOUDINARY_FOLDER } from "../constants/index.js";
 import { Types } from "mongoose";
+import { fileURLToPath } from 'url';
+import { getObjectURL } from "../common/s3.js";
 
 class UserController {
     async changeProfilePicture(req, res) {

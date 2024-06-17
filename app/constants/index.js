@@ -3,7 +3,7 @@ export const OTP = {
 	RESET_PASS: 'RESET_PASS'
 };
 
-export const CLOUDINARY_FOLDER = {
+export const S3_PATH = {
 	STUDIO: 'studio',
 	PROFILE_BANNER: 'profile_banner',
 	PROFILE_PICTURE: 'profile_picture',
