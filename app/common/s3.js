@@ -21,14 +21,16 @@ const getS3Client = () => {
 	return s3ClientInstance;
 };
 
-const getObjectURL = async (key, contentType) => {
+const getObjectURL = async (key, contentType = null) => {
 	try {
 		const s3Client = getS3Client();
-		const getParams = {
+		var getParams = {
 			Bucket: process.env.S3_BUCKET_NAME,
-			Key: key,
-			ContentType: contentType
+			Key: key
 		};
+		if (contentType) {
+			getParams.ContentType = contentType;
+		}
 		const command = new GetObjectCommand(getParams);
 		const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 		return url;
