@@ -11,7 +11,7 @@ import { endRecord, startRecord } from "../common/livekit.js";
 class StudioController {
 	async saveStream(req, res) {
 		try {
-			const { userId, title, description, dateStream, tags, previewImage } = req.body;
+			const { userId, title, description, dateStream, tags, previewImage, rerun } = req.body;
 			if (!userId || !title || !description || !dateStream) {
 				return res.status(400).json({ message: "Please enter userId, title, description, dateStream" });
 			}
@@ -20,7 +20,8 @@ class StudioController {
 				title: title,
 				description: description,
 				dateStream: dateStream,
-				tags: tags
+				tags: tags,
+				rerun: rerun
 			});
 			if (!data) {
 				return res.status(500).json({ message: "Failed to create stream" });
@@ -272,8 +273,11 @@ class StudioController {
 	async startStream(req, res, next) {
 		try {
 			const streamId = req.params.streamId;
-			const stream = await Stream.findByIdAndUpdate(streamId, { started: true });
-			const egressId = await startRecord(streamId);
+			const stream = await Stream.findByIdAndUpdate(streamId, { started: true }).lean();
+			var egressId =  null;
+			if(stream.rerun) {
+				egressId = await startRecord(streamId);
+			}
 			return res.status(200).json({
 				stream,
 				egressId
@@ -286,8 +290,10 @@ class StudioController {
 	async endStream(req, res, next) {
 		try {
 			const { streamId, egressId } = req.params;
-			const stream = await Stream.findByIdAndUpdate(streamId, { finished: true });
-			await endRecord(egressId);
+			const stream = await Stream.findByIdAndUpdate(streamId, { finished: true }).lean();
+			if(stream.rerun) {
+                await endRecord(egressId);
+            }
 			return res.status(200).json({
 				stream
 			});
@@ -339,6 +345,19 @@ class StudioController {
 				token
 			});
 		} catch (error) {
+			console.log(error);
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async getVideoRecord(req, res, next) {
+		try {
+			const streamId = req.params.streamId;
+			const streamLink = await getObjectURL(`record/${streamId}`);
+			return res.status(200).json({
+                streamLink
+            });
+		} catch(error) {
 			console.log(error);
 			return res.status(500).json({ message: error.message });
 		}
