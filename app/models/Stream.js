@@ -37,6 +37,10 @@ const StreamSchema = new Schema({
 		type: Number,
 		default: 0
 	},
+	numDislikes: {
+		type: Number,
+		default: 0
+	},
 	tags: [{
 		type: String,
 		trim: true

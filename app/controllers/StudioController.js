@@ -6,6 +6,8 @@ import User from "../models/User.js";
 import { createIngress, generateStreamerToken, generateViewerToken } from "../common/livekit.js";
 import { getObjectURL, putImageObject } from "../common/s3.js";
 import { endRecord, startRecord } from "../common/livekit.js";
+import History from "../models/History.js";
+import Chat from "../models/Chat.js";
 
 
 class StudioController {
@@ -30,8 +32,8 @@ class StudioController {
 			const imageKey = `${S3_PATH.STUDIO}/${data._id}.${type}`;
 			await putImageObject(imageKey, base64Data);
 			const contentType = `image/${type}`;
-			const updatedData = await Stream.findByIdAndUpdate(data._id, { 
-				$set: { "s3.key": imageKey, "s3.contentType": contentType } 
+			const updatedData = await Stream.findByIdAndUpdate(data._id, {
+				$set: { "s3.key": imageKey, "s3.contentType": contentType }
 			});
 			return res.status(201).json({
 				message: "Create stream successfully",
@@ -94,7 +96,7 @@ class StudioController {
 					path: 'user',
 					select: '-password'
 				}).lean();
-			if(!stream) {
+			if (!stream) {
 				const error = new Error("Stream not found.");
 				error.status = 400;
 				return next(error);
@@ -115,12 +117,12 @@ class StudioController {
 	async getAllComingStreams(req, res, next) {
 		try {
 			const userId = req?.user?.userId;
-			if(!userId) {
+			if (!userId) {
 				return res.status(403).json({ message: 'Access denied' });
 			}
-			const comingStreams = await Stream.find({ 
+			const comingStreams = await Stream.find({
 				user: userId,
-				started: false 
+				started: false
 			}).lean();
 			return res.status(200).json({
 				data: comingStreams
@@ -147,11 +149,11 @@ class StudioController {
 				const contentType = `image/${type}`;
 				s3Update = {
 					s3: {
-						key: imageKey, 
+						key: imageKey,
 						contentType: contentType
 					}
 				}
-			} 
+			}
 			const updatedData = await Stream.findByIdAndUpdate(streamId, {
 				title: title,
 				description: description,
@@ -207,14 +209,14 @@ class StudioController {
 		try {
 			const userId = req?.user?.userId;
 			const { modId, role } = req.body;
-			if(!userId) {
+			if (!userId) {
 				return res.status(403).json({ message: 'Forbidden access denied' });
 			}
-			if(!modId) {
+			if (!modId) {
 				return res.status(400).json({ message: 'Please provide a valid mod id' });
 			}
 			const mod = await User.findById(modId);
-			if(!mod) {
+			if (!mod) {
 				return res.status(400).json({ message: 'User not found' });
 			}
 			const updatedUser = await User.findByIdAndUpdate(userId, {
@@ -241,7 +243,7 @@ class StudioController {
 	async deleteMod(req, res, next) {
 		try {
 			const userId = req?.user?.userId;
-			const { modId } = req.params; 
+			const { modId } = req.params;
 
 			if (!userId) {
 				return res.status(403).json({ message: 'Forbidden access denied' });
@@ -252,7 +254,7 @@ class StudioController {
 
 			const updatedUser = await User.findByIdAndUpdate(userId, {
 				$pull: {
-					mods: { user: modId } 
+					mods: { user: modId }
 				}
 			}, { new: true });
 
@@ -338,6 +340,27 @@ class StudioController {
 			return res.status(200).json({
 				token
 			});
+		} catch (error) {
+			console.log(error);
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async deleteSavedStreams(req, res) {
+		try {
+			const { streamIds } = req.body;
+			const userId = req.user.userId;
+			const deleteHistoryResult = await History.deleteMany({ stream: { $in: streamIds } });
+			const deleteChatResult = await Chat.deleteMany({ stream: { $in: streamIds } });
+			const result = await Stream.deleteMany({ _id: { $in: streamIds }, user: userId });
+			if (result.deletedCount === 0) {
+				return res.status(404).json({ message: 'No streams found to delete' });
+			}
+			return res.status(200).json(
+				{
+					message: `${result.deletedCount} ${result.deletedCount > 1 ? "streams" : "stream"} deleted successfully`
+				}
+			);
 		} catch (error) {
 			console.log(error);
 			return res.status(500).json({ message: error.message });

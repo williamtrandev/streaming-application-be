@@ -34,11 +34,11 @@ const UserSchema = new Schema({
 		type: String,
 		required: true
 	},
-	profilePicture: {
+	profilePictureS3: {
 		key: String,
 		contentType: String
 	},
-	profileBanner: {
+	profileBannerS3: {
 		key: String,
 		contentType: String
 	},

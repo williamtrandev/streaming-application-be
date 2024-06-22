@@ -5,6 +5,7 @@ import chatRouter from './chat.js';
 import studioRouter from './studio.js';
 import searchRouter from './search.js';
 import streamRouter from './stream.js';
+import historyRouter from './history.js';
 
 const route = (app) => {
 	const apiRouter = express.Router();
@@ -15,6 +16,7 @@ const route = (app) => {
 	apiRouter.use('/studio/', studioRouter);
 	apiRouter.use('/search/', searchRouter);
 	apiRouter.use('/stream/', streamRouter);
+	apiRouter.use('/history/', historyRouter);
 
 	app.use('/api/v1/', apiRouter);
 
