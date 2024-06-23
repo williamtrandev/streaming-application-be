@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { sendMailToUser } from "../common/mail.js";
 import { generateOTP, containsWhitespace, containsSpecialCharacter, isValidEmail } from '../common/utils.js';
 import { OTP } from '../constants/index.js';
+import logger from '../common/logger.js';
 
 class AuthController {
 	// async verifyOTP(req, res, next) {
@@ -45,6 +46,7 @@ class AuthController {
 
 	async login(req, res, next) {
 		try {
+			logger.info("Start login api");
 			const { username, password } = req.body;
 			if (!username || !password) {
 				return res.status(400).json({ message: "Please enter username and password" });
@@ -54,35 +56,67 @@ class AuthController {
 				return res.status(401).json({ message: "Incorrect username or password" });
 			}
 			const match = await bcrypt.compare(password, user.password);
-			console.log(match);
 			if (match) {
-				// if (!user.verified) {
-				// 	const otp = generateOTP();
-				// 	await redisClient.getInstance().setEx(username, 300, otp);
-				// 	const subject = '[Duo Streaming] OTP verification';
-				// 	const context = {
-				// 		otp: otp,
-				// 		message: 'Account Verification'
-				// 	};
-				// 	sendMailToUser(user, subject, 'sendOTP', context);
-				// 	// return res.status(403).json({ error: 'Please check your email to continue' });
-				// }
+				const token = jwt.sign(
+					{ userId: user._id },
+					process.env.JWT_SECRET,
+					{ expiresIn: process.env.TOKEN_EXPIRE } 
+				);
+				const refreshToken = jwt.sign(
+					{ userId: user._id }, 
+					process.env.REFRESH_JWT_SECRET,
+					{ expiresIn: process.env.REFRESH_EXPIRE }
+				);
 
-				const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
 				const { password: pwd, ...userWithoutPassword } = user;
-
 				return res.status(200).json({
 					user: userWithoutPassword,
-					accessToken: token
+					accessToken: token,
+					refreshToken: refreshToken
 				});
 			} else {
 				return res.status(401).json({ message: "Incorrect username or password" });
 			}
 		} catch (error) {
+			logger.error("Call api login error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
 
+	async refreshToken(req, res, next) {
+		try {
+			logger.info("Start get refresh token api");
+			const refreshToken = req.body.refreshToken;
+
+			if (!refreshToken) {
+				return res.status(401).json({ message: 'Refresh token is required' });
+			}
+			const decoded = jwt.verify(refreshToken, process.env.REFRESH_JWT_SECRET);
+			const user = await User.findById(decoded.userId).lean();
+			const token = jwt.sign(
+				{ userId: decoded.userId }, 
+				process.env.JWT_SECRET, 
+				{ expiresIn: process.env.TOKEN_EXPIRE }
+			);
+			const newRefreshToken = jwt.sign(
+				{ userId: user._id },
+				process.env.REFRESH_JWT_SECRET,
+				{ expiresIn: process.env.REFRESH_EXPIRE }
+			);
+
+			const { password: pwd, ...userWithoutPassword } = user;
+
+			return res.status(200).json({
+				user: userWithoutPassword,
+				accessToken: token,
+				refreshToken: newRefreshToken
+			});
+		} catch (error) {
+			logger.error("Call api refresh token error: " + error);
+			return res.status(500).json({ message: error.message });
+		}
+	}
+	
 	async forgotPassword(req, res, next) {
 		try {
 			const { email, username } = req.body;

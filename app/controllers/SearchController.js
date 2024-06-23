@@ -1,4 +1,5 @@
 // import { calculateStringSimilarity } from "../common/utils.js";
+import logger from "../common/logger.js";
 import { FETCH_LIMIT } from "../constants/index.js";
 import History from "../models/History.js";
 import Stream from "../models/Stream.js";
@@ -9,6 +10,7 @@ class SearchController {
     async searchChannels(req, res) {
         try {
             const key = req.query.key;
+            logger.info("Start search for channels api with key: " + key);
             // if (key.length > 1) {
             //     const keywordVariations = [];
             //     for (let i = 2; i <= key.length; i++) {
@@ -40,6 +42,7 @@ class SearchController {
             return res.status(200).json({ channels: channels });
             // }
         } catch (error) {
+            logger.error("Call search for channels api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -47,6 +50,7 @@ class SearchController {
     async searchStreams(req, res) {
         try {
             const { key, page } = req.query;
+            logger.info(`Start search streams api with key ${key} and page ${page}`);
             // if (key.length > 1) {
             //     const keywordVariations = [];
             //     for (let i = 2; i <= key.length; i++) {
@@ -85,6 +89,7 @@ class SearchController {
             return res.status(200).json({ streams: streams });
             // }
         } catch (error) {
+            logger.error("Call search streams api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -93,6 +98,7 @@ class SearchController {
         try {
             const userId = req.user.userId;
             const { key, page } = req.query;
+            logger.info(`Start search history api with userId ${userId}, key ${key}, page ${page}`);
             const searchedHistory = await History.aggregate([
                 {
                     $match: {
@@ -154,7 +160,7 @@ class SearchController {
             ]);
             return res.status(200).json({ histories: searchedHistory });
         } catch (error) {
-            console.log(error);
+            logger.error("Call search history api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -162,6 +168,7 @@ class SearchController {
     async searchUsers(req, res) {
         try {
             const { q, limit, exclude } = req.query;
+            logger.info(`Start search users api with q: ${q}, limit: ${limit}, exclude: ${exclude}`);
             let excludedUserIds = [];
             if (exclude) {
                 const currentUserMods = await User.findById(exclude, 'mods')
@@ -196,7 +203,7 @@ class SearchController {
             });
             return res.status(200).json({ channels: sortedChannels });
         } catch (error) {
-            console.log(error)
+            logger.error("Call search users api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }

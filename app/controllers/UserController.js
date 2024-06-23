@@ -4,6 +4,7 @@ import Follower from "../models/Follower.js";
 import { Types } from "mongoose";
 import { getObjectURL, putImageObject } from "../common/s3.js";
 import { S3_PATH } from "../constants/index.js";
+import logger from "../common/logger.js";
 
 class UserController {
     async changeProfilePicture(req, res) {
@@ -233,7 +234,9 @@ class UserController {
 
     async getFollowedChannels(req, res, next) {
         try {
+            logger.info("Start api get follow channel");
             const userId = req.params.userId;
+            logger.info("Get follow channel with userId: " + userId);
             const followers = await Follower.aggregate([
                 {
                     $match: {
@@ -270,13 +273,14 @@ class UserController {
             ]);
             for (const follow of followers) {
                 const profilePicture = await getObjectURL(
-                    follow.streamer.profilePicture.key,
-                    follow.streamer.profilePicture.contentType
+                    follow.streamer.profilePictureS3.key,
+                    follow.streamer.profilePictureS3.contentType
                 );
                 follow.streamer.profilePicture = profilePicture;
             }
             return res.status(200).json({ followedChannels: followers });
         } catch (error) {
+            logger.error("Call api get followed channel error: ", error);
             return res.status(500).json({ message: error.message });
         }
     }
