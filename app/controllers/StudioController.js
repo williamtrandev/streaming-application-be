@@ -102,6 +102,10 @@ class StudioController {
 				return next(error);
 			}
 			const previewImage = await getObjectURL(stream?.s3?.key, stream?.s3?.contentType);
+			stream.user.profilePicture = await getObjectURL(
+				stream.user.profilePictureS3.key,
+				stream.user.profilePictureS3.contentType
+			);
 			return res.status(200).json({
 				stream: {
 					...stream,

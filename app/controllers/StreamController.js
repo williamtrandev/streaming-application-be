@@ -144,6 +144,23 @@ class StreamController {
             return res.status(500).json({ message: error.message });
         }
     }
+
+    async getNumLikesAndDislikes(req , res) {
+        try {
+            const { streamId } = req.params;
+            const stream = await Stream.findById(streamId);
+            if (!stream) {
+                return res.status(404).json({ message: "Stream not found" });
+            }
+            return res.status(200).json({
+                numLikes: stream.numLikes,
+                numDislikes: stream.numDislikes
+            });
+        } catch (error) {
+            console.log(error)
+            return res.status(500).json({ message: error.message });
+        }
+    }
 }
 
 export default new StreamController();
