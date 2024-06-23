@@ -37,9 +37,9 @@ const willSocket = (server) => {
 
 		socket.on("sendMessage", (data) => {
 			console.log(data);
-			const { streamId, userId, content, duration } = data;
+			const { streamId, user, content, duration, isStreamer } = data;
 			console.log(rooms[streamId]);
-			io.to(streamId).emit("newMessage", { userId, content });
+			io.to(streamId).emit("newMessage", { user, content, isStreamer });
 			console.log("Sent message");
 		});
 

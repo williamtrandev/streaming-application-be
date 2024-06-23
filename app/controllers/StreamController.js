@@ -1,3 +1,4 @@
+import logger from "../common/logger.js";
 import { FETCH_LIMIT } from "../constants/index.js";
 import Follower from "../models/Follower.js";
 import History from "../models/History.js";
@@ -8,6 +9,7 @@ class StreamController {
     async getSavedStreams(req, res) {
         try {
             const { username, page } = req.params;
+            logger.info(`Start get saved stream api with username ${username}, page ${page}`);
             const user = await User.findOne({ username: username });
             if (!user) {
                 return res.status(404).json({ message: 'User not found' });
@@ -17,6 +19,7 @@ class StreamController {
                 .limit(FETCH_LIMIT);
             return res.status(200).json({ streams });
         } catch (error) {
+            logger.error("Call get saved streams api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -24,6 +27,7 @@ class StreamController {
     async getStreamerHomeStreams(req, res) {
         try {
             const { username } = req.params;
+            logger.info("Start get streamer home api with username " + username);
             const user = await User.findOne({ username: username });
             if (!user) {
                 return res.status(404).json({ message: 'User not found' });
@@ -43,6 +47,7 @@ class StreamController {
                 currentStream
             });
         } catch (error) {
+            logger.error("Call get streamer home api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -51,6 +56,7 @@ class StreamController {
         try {
             const userId = req.user.userId;
             const { page } = req.params;
+            logger.info(`Start get viewed streams with userId ${userId}, page ${page}`);
             const histories = await History.find({ user: userId })
                 .populate("stream")
                 .skip((page - 1) * FETCH_LIMIT)
@@ -63,6 +69,7 @@ class StreamController {
                 histories
             });
         } catch (error) {
+            logger.error("Call get viewed streams api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -71,6 +78,7 @@ class StreamController {
         try {
             const userId = req.user.userId;
             const { page } = req.params;
+            logger.info(`Start get liked streams api with userId ${userId}, page ${page}`);
             const histories = await History.find({ user: userId, liked: true })
                 .populate({
                     path: "stream",
@@ -89,6 +97,7 @@ class StreamController {
                 histories
             });
         } catch (error) {
+            logger.error("Call get liked streams api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -97,6 +106,7 @@ class StreamController {
         try {
             const userId = req.user.userId;
             const { page } = req.params;
+            logger.info(`Start get following streams with userId ${userId}, page ${page}`);
             const followedStreamers = await Follower.find({ user: userId }).select('streamer');
             const streamerIds = followedStreamers.map(follow => follow.streamer);
             const streams = await Stream.find({ user: { $in: streamerIds } })
@@ -110,6 +120,7 @@ class StreamController {
                 streams
             });
         } catch (error) {
+            logger.error("Call get following streams api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }

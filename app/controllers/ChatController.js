@@ -1,10 +1,13 @@
+import logger from '../common/logger.js';
 import redisClient from '../common/redis.js';
+import { getObjectURL } from '../common/s3.js';
 import Chat from "../models/Chat.js";
 
 class ChatController {
 	async sendMessage(req, res, next) {
 		try {
-			const { userId, streamId, duration, content } = req.body;
+			logger.info("Start send message api with body: " + req.body);
+			const { userId, streamId, duration, content, isStreamer } = req.body;
 			if (!userId || !streamId || !duration || !content) {
 				return res.status(400).json({ message: 'Please provide userId, streamId, duration and content' });
 			}
@@ -12,13 +15,15 @@ class ChatController {
 				user: userId,
 				stream: streamId,
 				duration: duration,
-				content: content
+				content: content,
+				isStreamer: isStreamer
 			});
 			if (!data) {
 				return res.status(500).json({ message: "Failed to send message to the database" });
 			}
 			return res.status(200).json({ msg: "Send message successfully" });
 		} catch (error) {
+			logger.error("Call api send message error: " + error);
 			return res.status(500).json({ error: error.message });
 		}
 	}
@@ -26,6 +31,7 @@ class ChatController {
 	async getAllMessages(req, res, next) {
 		try {
 			const { streamId } = req.params;
+			logger.info("Call api get all messages of stream " + streamId);
 			const { limit } = req.query;
 			let query = Chat.find({ stream: streamId });
 			if (limit) {
@@ -36,11 +42,22 @@ class ChatController {
 					path: 'user',
 					select: '_id username email fullname profilePicture'
 				})
+				.lean()
 				.exec();
+			for (let message of messages) {
+				if (message.user.profilePictureS3 && message.user.profilePictureS3.key) {
+					const s3Image = await getObjectURL(message.user.profilePictureS3.key, message.user.profilePictureS3.contentType);
+					message.user.profilePicture = s3Image;
+				} else {
+					message.user.profilePicture = null;
+				}
+			}
+
 			return res.json({
 				messages: messages
 			});
 		} catch (error) {
+			logger.error("Call api get all message error: " + error);
 			return res.status(500).json({ error: error.message });
 		}
 	}
