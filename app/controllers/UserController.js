@@ -22,7 +22,7 @@ class UserController {
 			const imageKey = `${S3_PATH.PROFILE_PICTURE}/${user._id}.${type}`;
 			await putImageObject(imageKey, base64Data);
 			const contentType = `image/${type}`;
-            user.profilePicture = {
+            user.profilePictureS3 = {
                 key: imageKey,
                 contentType: contentType
             };
@@ -52,7 +52,7 @@ class UserController {
 			const imageKey = `${S3_PATH.PROFILE_BANNER}/${user._id}.${type}`;
 			await putImageObject(imageKey, base64Data);
 			const contentType = `image/${type}`;
-            user.profileBanner = {
+            user.profileBannerS3 = {
                 key: imageKey,
                 contentType: contentType
             };
@@ -123,8 +123,8 @@ class UserController {
                 return res.status(404).json({ message: "User not found" });
             }
             const today = new Date();
-            const profilePicture = await getObjectURL(user.profilePicture.key, user.profilePicture.contentType);
-            const profileBanner = await getObjectURL(user.profileBanner.key, user.profileBanner.contentType);
+            const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
+            const profileBanner = await getObjectURL(user.profileBannerS3.key, user.profileBannerS3.contentType);
             return res.status(200).json({
                 profilePicture: profilePicture,
                 profileBanner: profileBanner,
@@ -146,7 +146,7 @@ class UserController {
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
-            const profilePicture = await getObjectURL(user.profilePicture.key, user.profilePicture.contentType);
+            const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
             return res.status(200).json({
                 profilePicture: profilePicture,
                 username: user.username,
@@ -209,10 +209,10 @@ class UserController {
                 return res.status(500).json({ message: "Failed to follow user" });
             }
             const streamer = await User.findById(streamerId)
-                .select("username fullname profilePicture isLive");
+                .select("username fullname profilePictureS3 isLive");
             const profilePicture = await getObjectURL(
-                streamer.profilePicture.key,
-                streamer.profilePicture.contentType
+                streamer.profilePictureS3?.key,
+                streamer.profilePictureS3?.contentType
             );
             return res.status(200).json({
                 message: "Followed successfully",
@@ -265,7 +265,7 @@ class UserController {
                         'streamer._id': 1,
                         'streamer.username': 1,
                         'streamer.fullname': 1,
-                        'streamer.profilePicture': 1,
+                        'streamer.profilePictureS3': 1,
                         'streamer.isLive': 1,
                         'streamer.updatedAt': 1
                     }
@@ -273,8 +273,8 @@ class UserController {
             ]);
             for (const follow of followers) {
                 const profilePicture = await getObjectURL(
-                    follow.streamer.profilePictureS3.key,
-                    follow.streamer.profilePictureS3.contentType
+                    follow.streamer.profilePictureS3?.key,
+                    follow.streamer.profilePictureS3?.contentType
                 );
                 follow.streamer.profilePicture = profilePicture;
             }
@@ -293,8 +293,8 @@ class UserController {
                 return res.status(404).json({ message: "User not found" });
             }
             const numFollowers = await Follower.countDocuments({ user: user._id });
-            const profilePicture = await getObjectURL(user.profilePicture.key, user.profilePicture.contentType);
-            const profileBanner = await getObjectURL(user.profileBanner.key, user.profileBanner.contentType);
+            const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
+            const profileBanner = await getObjectURL(user.profileBannerS3.key, user.profileBannerS3.contentType);
             return res.status(200).json({
                 _id: user._id,
                 profilePicture: profilePicture,
