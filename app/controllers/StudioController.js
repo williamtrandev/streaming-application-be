@@ -8,12 +8,14 @@ import { getObjectURL, putImageObject } from "../common/s3.js";
 import { endRecord, startRecord } from "../common/livekit.js";
 import History from "../models/History.js";
 import Chat from "../models/Chat.js";
+import logger from "../common/logger.js";
 
 
 class StudioController {
 	async saveStream(req, res) {
 		try {
-			const { userId, title, description, dateStream, tags, previewImage } = req.body;
+			const { userId, title, description, dateStream, tags, previewImage, rerun } = req.body;
+			logger.info(`Start save stream api with body ${req.body}`);
 			if (!userId || !title || !description || !dateStream) {
 				return res.status(400).json({ message: "Please enter userId, title, description, dateStream" });
 			}
@@ -22,7 +24,8 @@ class StudioController {
 				title: title,
 				description: description,
 				dateStream: dateStream,
-				tags: tags
+				tags: tags,
+				rerun: rerun
 			});
 			if (!data) {
 				return res.status(500).json({ message: "Failed to create stream" });
@@ -40,12 +43,14 @@ class StudioController {
 				stream: updatedData
 			});
 		} catch (error) {
+			logger.error("Call save stream api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
 	async saveNotification(req, res, next) {
 		try {
 			const { userId, content } = req.body;
+			logger.info(`Start save notification with body ${req.body}`);
 			if (!userId || !content) {
 				return res.status(400).json({ message: "Please enter userId, content" });
 			}
@@ -65,12 +70,14 @@ class StudioController {
 				message: "Create notifications successfully"
 			});
 		} catch (error) {
+			logger.error("Call save notification api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
 	async getNotification(req, res, next) {
 		try {
 			const userId = req.user.userId;
+			logger.info(`Start get notification for ${userId}`);
 			if (!userId) {
 				return res.status(400).json({ message: "Please login" });
 			}
@@ -83,6 +90,7 @@ class StudioController {
 				notifications: notifications
 			});
 		} catch (error) {
+			logger.error("Call get notification api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -90,7 +98,7 @@ class StudioController {
 	async getDetailStream(req, res, next) {
 		try {
 			const { streamId } = req.params;
-			const userId = req?.user?.userId;
+			logger.info(`Start get detail stream api with streamId ${streamId}`);
 			const stream = await Stream.findById(streamId)
 				.populate({
 					path: 'user',
@@ -121,6 +129,7 @@ class StudioController {
 	async getAllComingStreams(req, res, next) {
 		try {
 			const userId = req?.user?.userId;
+			logger.info(`Start get all coming streams api for ${userId}`);
 			if (!userId) {
 				return res.status(403).json({ message: 'Access denied' });
 			}
@@ -132,6 +141,7 @@ class StudioController {
 				data: comingStreams
 			})
 		} catch (error) {
+			logger.error("Call get all coming streams api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -139,6 +149,7 @@ class StudioController {
 	async editStream(req, res, next) {
 		try {
 			const { streamId } = req.params;
+			logger.info(`Start edit stream api with streamId ${streamId}, body ${req.body}`)
 			const { title, description, dateStream, tags, previewImage, rerun } = req.body;
 			const currentStream = await Stream.findById(streamId);
 			if (!currentStream) {
@@ -175,6 +186,7 @@ class StudioController {
 				stream: updatedData
 			});
 		} catch (error) {
+			logger.error("Call edit stream api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -182,12 +194,14 @@ class StudioController {
 	async deleteStream(req, res, next) {
 		try {
 			const { streamId } = req.params;
+			logger.info(`Start delete stream api with streamId ${streamId}`);
 			const deletedStream = await Stream.findByIdAndDelete(streamId);
 			if (!deletedStream) {
 				return res.status(404).json({ message: 'Stream not found' });
 			}
 			res.status(204).json({ message: 'Stream deleted successfully' });
 		} catch (error) {
+			logger.error("Call delete stream api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -195,6 +209,7 @@ class StudioController {
 	async getAllMods(req, res, next) {
 		try {
 			const userId = req?.user?.userId;
+			logger.info(`Start get all mods api with userId ${userId}`);
 			if (!userId) {
 				return res.status(403).json({ message: 'Forbidden access denied' });
 			}
@@ -205,6 +220,7 @@ class StudioController {
 			const mods = user.mods;
 			return res.status(200).json({ data: mods });
 		} catch (error) {
+			logger.error("Call get all mods api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -213,6 +229,7 @@ class StudioController {
 		try {
 			const userId = req?.user?.userId;
 			const { modId, role } = req.body;
+			logger.info(`Start add mod api with userId: ${userId}, body: ${req.body}`);
 			if (!userId) {
 				return res.status(403).json({ message: 'Forbidden access denied' });
 			}
@@ -240,6 +257,7 @@ class StudioController {
 				user: updatedUser
 			});
 		} catch (error) {
+			logger.error("Call add mods api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -247,8 +265,8 @@ class StudioController {
 	async deleteMod(req, res, next) {
 		try {
 			const userId = req?.user?.userId;
-			const { modId } = req.params;
-
+			const { modId } = req.params; 
+			logger.info(`Start delete mod api with userId ${userId}, modId ${modId}`);
 			if (!userId) {
 				return res.status(403).json({ message: 'Forbidden access denied' });
 			}
@@ -271,6 +289,7 @@ class StudioController {
 				user: updatedUser
 			});
 		} catch (error) {
+			logger.error("Call delete mods api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -278,13 +297,18 @@ class StudioController {
 	async startStream(req, res, next) {
 		try {
 			const streamId = req.params.streamId;
-			const stream = await Stream.findByIdAndUpdate(streamId, { started: true });
-			const egressId = await startRecord(streamId);
+			logger.info(`Start start stream api with streamId ${streamId}`);
+			const stream = await Stream.findByIdAndUpdate(streamId, { started: true }).lean();
+			var egressId =  null;
+			if(stream.rerun) {
+				egressId = await startRecord(streamId);
+			}
 			return res.status(200).json({
 				stream,
 				egressId
 			});
 		} catch (error) {
+			logger.error("Call start stream api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -292,8 +316,11 @@ class StudioController {
 	async endStream(req, res, next) {
 		try {
 			const { streamId, egressId } = req.params;
-			const stream = await Stream.findByIdAndUpdate(streamId, { finished: true });
-			await endRecord(egressId);
+			logger.info(`Start end stream api with streamId ${streamId}, egressId ${egressId}`);
+			const stream = await Stream.findByIdAndUpdate(streamId, { finished: true }).lean();
+			if(stream.rerun) {
+                await endRecord(egressId);
+            }
 			return res.status(200).json({
 				stream
 			});
@@ -310,7 +337,8 @@ class StudioController {
 	// }
 	async getServerUrlAndStreamKey(req, res) {
 		try {
-			const { username, streamId } = req.params
+			const { username, streamId } = req.params;
+			logger.info(`Start get server url and stream key username ${username}, streamId ${streamId}`);
 			const ingress = await createIngress(streamId, username);
 
 			return res.status(200).json({
@@ -318,7 +346,7 @@ class StudioController {
 				streamKey: ingress.streamKey
 			});
 		} catch (error) {
-			console.log(error);
+			logger.error("Call get server url and stream key api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -326,12 +354,13 @@ class StudioController {
 	async getStreamerToken(req, res) {
 		try {
 			const { streamId } = req.body;
+			logger.info(`Start get stream token with streamId ${streamId}`);
 			const token = await generateStreamerToken(streamId);
 			return res.status(200).json({
 				token
 			});
 		} catch (error) {
-			console.log(error);
+			logger.error("Call get stream token api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -340,12 +369,28 @@ class StudioController {
 		try {
 			const { streamId } = req.body;
 			const userId = req.user.userId;
+			logger.info(`Start get viewer token with streamId ${streamId}, userId ${userId}`);
+
 			const token = await generateViewerToken(streamId, userId);
 			return res.status(200).json({
 				token
 			});
 		} catch (error) {
-			console.log(error);
+			logger.error("Call get viewer token api error: " + error);
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async getVideoRecord(req, res, next) {
+		try {
+			const streamId = req.params.streamId;
+			logger.info(`Start get video record api with streamId ${streamId}`)
+			const streamLink = await getObjectURL(`record/${streamId}`);
+			return res.status(200).json({
+                streamLink
+            });
+		} catch(error) {
+			logger.error("Call get video record api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}

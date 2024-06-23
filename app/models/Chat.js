@@ -17,7 +17,11 @@ const ChatSchema = new Schema({
 		type: Number,
 		required: true
 	},
-	content: String
+	content: String,
+	isStreamer: {
+		type: Boolean,
+		default: false
+	}
 }, { timestamps: true });
 
 const Chat = mongoose.model('Chat', ChatSchema);

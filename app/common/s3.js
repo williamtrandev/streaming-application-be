@@ -1,5 +1,6 @@
 import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import redisClient from "./redis.js";
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -21,16 +22,24 @@ const getS3Client = () => {
 	return s3ClientInstance;
 };
 
-const getObjectURL = async (key, contentType) => {
+const getObjectURL = async (key, contentType = null) => {
 	try {
+		const objCached = await redisClient.getInstance().get(key);
+		if(objCached) {
+			return objCached;
+		}
+		console.log("MISS CACHED WITH KEY", key);
 		const s3Client = getS3Client();
-		const getParams = {
+		var getParams = {
 			Bucket: process.env.S3_BUCKET_NAME,
-			Key: key,
-			ContentType: contentType
+			Key: key
 		};
+		if (contentType) {
+			getParams.ContentType = contentType;
+		}
 		const command = new GetObjectCommand(getParams);
 		const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+		await redisClient.getInstance().setEx(key, 3600, url);
 		return url;
 	} catch (err) {
 		console.error("Get Object Error", err);

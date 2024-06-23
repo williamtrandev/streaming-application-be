@@ -21,5 +21,6 @@ router.get('/stream-key/:username/:streamId', verifyToken, studioController.getS
 router.post('/streamer-token', verifyToken, studioController.getStreamerToken);
 router.post('/viewer-token', verifyToken, studioController.getViewerToken);
 router.delete('/stream', verifyToken, studioController.deleteSavedStreams);
+router.get('/record/:streamId', verifyToken, studioController.getVideoRecord);
 
 export default router;
