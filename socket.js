@@ -24,7 +24,7 @@ const willSocket = (server) => {
 			console.log("socketToUserMap", socketToUserMap);
 		});
 
-		socket.on("joinRoom", (streamId, userId) => {
+		socket.on("joinRoom", (streamId) => {
 			socket.join(streamId);
 			console.log(socket.rooms);
 			if (!rooms[streamId]) {
@@ -33,6 +33,26 @@ const willSocket = (server) => {
 			rooms[streamId].add(socket.id);
 			console.log("User joined");
 			console.log(rooms);
+			io.to(streamId).emit('updateViewers', { streamId, viewers: rooms[streamId].size - 1 });
+		});
+
+		socket.on('leaveStream', (streamId) => {
+			if (rooms[streamId].has(socket.id)) {
+				rooms[streamId].delete(socket.id);
+				console.log(`Client ${socket.id} left room ${streamId}`);
+				if (rooms[streamId].size === 0) {
+					delete rooms[streamId];
+				}
+			}
+			const userId = socketToUserMap.get(socket.id);
+			if (userId) {
+				userToSocketMap.delete(userId);
+				socketToUserMap.delete(socket.id);
+				console.log(`User leave: ${userId}`);
+			}
+			if(rooms[streamId]) {
+				io.to(streamId).emit('updateViewers', { streamId, viewers: rooms[streamId].size - 1 });
+			}
 		});
 
 		socket.on("sendMessage", (data) => {
@@ -71,9 +91,11 @@ const willSocket = (server) => {
 
 		socket.on('disconnect', () => {
 			console.log(`Client disconnected: ${socket.id}`);
+			var streamId = null;
 			Object.keys(rooms).forEach((room) => {
 				if (rooms[room].has(socket.id)) {
 					rooms[room].delete(socket.id);
+					streamId = room;
 					console.log(`Client ${socket.id} left room ${room}`);
 					if (rooms[room].size === 0) {
 						delete rooms[room];
@@ -85,6 +107,9 @@ const willSocket = (server) => {
 				userToSocketMap.delete(userId);
 				socketToUserMap.delete(socket.id);
 				console.log(`User disconnected: ${userId}`);
+			}
+			if (rooms[streamId]) {
+				io.to(streamId).emit('updateViewers', { streamId, viewers: rooms[streamId].size - 1 });
 			}
 		});
 	});
