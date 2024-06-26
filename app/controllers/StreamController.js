@@ -5,6 +5,7 @@ import Follower from "../models/Follower.js";
 import History from "../models/History.js";
 import Stream from "../models/Stream.js";
 import User from "../models/User.js";
+import { Types } from "mongoose";
 
 class StreamController {
     async getSavedStreams(req, res) {
@@ -136,6 +137,7 @@ class StreamController {
                 })
                 .skip((page - 1) * FETCH_LIMIT)
                 .limit(FETCH_LIMIT)
+                .sort({ createAt: -1 })
                 .lean();
             for (const stream of streams) {
                 stream.previewImage = await getObjectURL(stream.s3?.key, stream.s3?.contentType);
@@ -154,7 +156,7 @@ class StreamController {
         }
     }
 
-    async getNumLikesAndDislikes(req , res) {
+    async getNumLikesAndDislikes(req, res) {
         try {
             const { streamId } = req.params;
             const stream = await Stream.findById(streamId);
@@ -167,6 +169,138 @@ class StreamController {
             });
         } catch (error) {
             logger.error("Call get lives and dislikes api error: " + error);
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async getHomeStreams(req, res) {
+        try {
+            const randomStreams = await Stream.aggregate([
+                { $match: { started: true, finished: false } },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'user',
+                        foreignField: '_id',
+                        as: 'user',
+                        pipeline: [
+                            {
+                                $project: {
+                                    _id: 1,
+                                    username: 1,
+                                    fullname: 1,
+                                    profilePictureS3: 1 
+                                }
+                            }
+                        ]
+                    }
+                },
+                { $sample: { size: 12 } },
+                {
+                    $unwind: '$user'
+                }
+            ]);
+            for (const stream of randomStreams) {
+                stream.previewImage = await getObjectURL(
+                    stream.s3.key,
+                    stream.s3.contentType
+                );
+                stream.user.profilePicture = await getObjectURL(
+                    stream.user.profilePictureS3.key,
+                    stream.user.profilePictureS3.contentType
+                );
+            }
+
+            let followingStreams = [];
+            let recommendStreams = [];
+            const userId = req.query.userId;
+            console.log(userId);
+            if (userId) {
+                const followedStreamers = await Follower.find({ user: userId }).select('streamer');
+                const streamerIds = followedStreamers.map(follow => follow.streamer);
+                followingStreams = await Stream.find({ user: { $in: streamerIds } })
+                    .populate({
+                        path: "user",
+                        select: "username fullname profilePictureS3"
+                    })
+                    .limit(6)
+                    .sort({ dateStream: -1 })
+                    .lean();
+                for (const stream of followingStreams) {
+                    stream.previewImage = await getObjectURL(
+                        stream.s3.key,
+                        stream.s3.contentType
+                    );
+                    stream.user.profilePicture = await getObjectURL(
+                        stream.user.profilePictureS3.key,
+                        stream.user.profilePictureS3.contentType
+                    );
+                }
+
+                const recentHistories = await History.aggregate([
+                    { $match: { user: Types.ObjectId.createFromHexString(userId) } },
+                    { $sort: { createdAt: -1 } },
+                    { $limit: 20 },
+                    {
+                        $lookup: {
+                            from: 'streams',
+                            localField: 'stream',
+                            foreignField: '_id',
+                            as: 'streamDetails'
+                        }
+                    },
+                    { $unwind: '$streamDetails' },
+                    { $project: { 'streamDetails.tags': 1 } }
+                ]);
+
+                // Extract tags from the results
+                const historyTags = recentHistories.map(history => history.streamDetails.tags).flat();
+                const tags = [...new Set(historyTags)];
+                recommendStreams = await Stream.aggregate([
+                    { $match: { tags: { $in: tags } } },
+                    {
+                        $lookup: {
+                            from: 'users',
+                            localField: 'user',
+                            foreignField: '_id',
+                            as: 'user',
+                            pipeline: [
+                                {
+                                    $project: {
+                                        _id: 1,
+                                        username: 1,
+                                        fullname: 1,
+                                        profilePictureS3: 1 
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    { $sample: { size: 6 } },
+                    {
+                        $unwind: '$user'
+                    }
+                ]);
+
+                for (const stream of recommendStreams) {
+                    stream.previewImage = await getObjectURL(
+                        stream.s3.key,
+                        stream.s3.contentType
+                    );
+                    stream.user.profilePicture = await getObjectURL(
+                        stream.user.profilePictureS3.key,
+                        stream.user.profilePictureS3.contentType
+                    );
+                }
+            }
+
+            return res.status(200).json({
+                randomStreams,
+                followingStreams,
+                recommendStreams
+            });
+        } catch (error) {
+            logger.error("Call get home streams api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
