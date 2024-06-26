@@ -415,6 +415,96 @@ class StudioController {
 			return res.status(500).json({ message: error.message });
 		}
 	}
+
+	async getStats(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			const { statsType, fromDate, toDate } = req.query;
+			logger.info(`Start get stats api with userId ${userId}, statsType ${statsType}, fromDate ${fromDate}, toDate ${toDate}`);
+			let query = { user: userId, finished: true };
+
+			if (fromDate && toDate) {
+				query.dateStream = {
+					$gte: new Date(fromDate).setHours(0, 0, 0, 0),
+					$lte: new Date(toDate).setHours(23, 59, 59, 999)
+				};
+			}
+
+			var streams = Stream.find(query).sort({ dateStream: -1 }).limit(10);
+			streams = await streams.lean();	
+			streams = streams.sort((a, b) => a.dateStream - b.dateStream);
+			var datasets;
+			if (statsType === 'time_streaming') {
+				const statsStreams = streams.map(stream => {
+					const durationInMillis = new Date(stream.updatedAt) - new Date(stream.dateStream);
+					const data = Math.round(durationInMillis / 1000);
+					return {
+						streamId: stream._id,
+						title: stream.title,
+						dateStream: stream.dateStream,
+						data: data
+					};
+				});
+				datasets = [{
+					label: 'Time Streaming',
+					stats: statsStreams
+				}];
+			} else if (statsType === 'numlikes_dislikes') {
+				const statsLikes = streams.map(stream => {
+					return {
+						streamId: stream._id,
+						title: stream.title,
+						dateStream: stream.dateStream,
+						data: stream.numLikes || 0
+					};
+				});
+				const statsDislikes = streams.map(stream => {
+					return {
+						streamId: stream._id,
+						title: stream.title,
+						dateStream: stream.dateStream,
+						data: stream.numDislikes || 0
+					};
+				});
+				datasets = [
+					{
+						label: 'Num Likes',
+						stats: statsLikes
+					},
+					{
+						label: 'Num Dislikes',
+						stats: statsDislikes
+					}
+				];
+			} else {
+				const statsStreams = await Promise.all(streams.map(async (stream) => {
+
+					const followersCount = await Follower.countDocuments({
+						streamer: stream.user,
+						createdAt: {
+							$gte: new Date(stream.dateStream).setHours(0, 0, 0, 0),
+							$lte: new Date(stream.updatedAt).setHours(23, 59, 59, 999) 
+						}
+					});
+
+					return {
+						streamId: stream._id,
+						title: stream.title,
+						dateStream: stream.dateStream,
+						data: followersCount || 0
+					};
+				}));
+				datasets = [{
+					label: 'Followers',
+					stats: statsStreams
+				}];
+			}
+			return res.status(200).json({ datasets });
+		} catch (error) {
+			logger.error("Call to get stats api error: " + error);
+			return res.status(500).json({ message: error.message });
+		}
+	}
 }
 
 export default new StudioController();
