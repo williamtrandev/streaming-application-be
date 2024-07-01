@@ -18,5 +18,7 @@ router.get('/about/:username', userController.getStreamerABout);
 router.get('/follow/:userId/:streamerId', userController.getFollow);
 router.put('/notification', verifyToken, userController.toggleNotification);
 router.delete('/unfollow/:streamerId', verifyToken, userController.unfollow);
+router.get('/check-mod/:streamerId', verifyToken, userController.checkIsMod);
+router.get('/check-banned/:streamId', verifyToken, userController.checkIsBanned);
 
 export default router;

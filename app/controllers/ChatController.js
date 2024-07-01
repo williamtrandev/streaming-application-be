@@ -40,21 +40,27 @@ class ChatController {
 			const messages = await query
 				.populate({
 					path: 'user',
-					select: '_id username email fullname profilePicture'
+					select: '_id username email fullname profilePictureS3'
 				})
 				.lean()
 				.exec();
-			for (let message of messages) {
-				if (message.user.profilePictureS3 && message.user.profilePictureS3.key) {
-					const s3Image = await getObjectURL(message.user.profilePictureS3.key, message.user.profilePictureS3.contentType);
-					message.user.profilePicture = s3Image;
+			const promises = messages.map(async (message) => {
+				if (message.user.profilePictureS3) {
+					const s3Image = await getObjectURL(
+						message.user.profilePictureS3.key,
+						message.user.profilePictureS3.contentType
+					);
+					message.user.profilePictureS3 = s3Image;
 				} else {
-					message.user.profilePicture = null;
+					message.user.profilePictureS3 = null;
 				}
-			}
+				return message;
+			});
+
+			const updatedMessages = await Promise.all(promises);
 
 			return res.json({
-				messages: messages
+				messages: updatedMessages
 			});
 		} catch (error) {
 			logger.error("Call api get all message error: " + error);

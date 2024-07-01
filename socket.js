@@ -2,6 +2,8 @@ import { Server } from "socket.io";
 import User from "./app/models/User.js";
 import Stream from "./app/models/Stream.js";
 import Follower from "./app/models/Follower.js";
+import logger from "./app/common/logger.js";
+import { getObjectURL } from "./app/common/s3.js";
 
 const willSocket = (server) => {
 	const io = new Server(server, {
@@ -17,9 +19,12 @@ const willSocket = (server) => {
 
 	io.on("connection", async (socket) => {
 		socket.on("logged", (userId) => {
-			console.log("User logged", userId);
-			userToSocketMap.set(userId, socket.id);
-			socketToUserMap.set(socket.id, userId);
+			logger.info("User logged ", userId);
+			if(userId) {
+				userToSocketMap.set(userId, socket.id);
+				socketToUserMap.set(socket.id, userId);
+			}
+			
 			console.log("userToSocketMap", userToSocketMap);
 			console.log("socketToUserMap", socketToUserMap);
 		});
@@ -37,7 +42,7 @@ const willSocket = (server) => {
 		});
 
 		socket.on('leaveStream', (streamId) => {
-			if (rooms[streamId].has(socket.id)) {
+			if (rooms[streamId] && rooms[streamId].has(socket.id)) {
 				rooms[streamId].delete(socket.id);
 				console.log(`Client ${socket.id} left room ${streamId}`);
 				if (rooms[streamId].size === 0) {
@@ -55,10 +60,12 @@ const willSocket = (server) => {
 			}
 		});
 
-		socket.on("sendMessage", (data) => {
+		socket.on("sendMessage", async (data) => {
 			console.log(data);
 			const { streamId, user, content, duration, isStreamer } = data;
 			console.log(rooms[streamId]);
+			const profilePictureS3 = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
+			user.profilePictureS3 = profilePictureS3;
 			io.to(streamId).emit("newMessage", { user, content, isStreamer });
 			console.log("Sent message");
 		});
@@ -82,12 +89,34 @@ const willSocket = (server) => {
 					user: {
 						username: user.username,
 						fullname: user.fullname,
-						profilePicture: user.profilePicture
+						profilePictureS3: user.profilePictureS3
 					}
 				};
 				io.to(socketIds).emit("receiveNotification", notification);
 			}
 		});
+
+		socket.on("banned", (bannedId, streamId) => {
+			logger.info(`Start socket banned event with bannedId: ${bannedId}, streamId: ${streamId}`);
+			console.log(rooms)
+			const stream = rooms[streamId];
+			const bannedSocketId = userToSocketMap.get(bannedId);
+			logger.info(`Socket event banned with stream ${stream} and banned socket id ${bannedSocketId}`);
+			if(stream && stream.has(bannedSocketId)) {
+				userToSocketMap.delete(bannedId);
+				socketToUserMap.delete(bannedSocketId);
+				io.to(bannedSocketId).emit("clientBanned")
+			}
+		})
+
+		socket.on("bannedChat", (bannedId, streamId) => {
+			logger.info(`Start socket banned chat event with bannedId: ${bannedId}, streamId: ${streamId}`);
+			const bannedSocketId = userToSocketMap.get(bannedId);
+			logger.info(`Socket event banned chat with banned socket id ${bannedSocketId}`);
+			if(bannedSocketId) {
+				io.to(bannedSocketId).emit("clientBannedChat");
+			}
+		})
 
 		socket.on('disconnect', () => {
 			console.log(`Client disconnected: ${socket.id}`);
