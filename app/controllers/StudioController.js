@@ -9,6 +9,7 @@ import { endRecord, startRecord } from "../common/livekit.js";
 import History from "../models/History.js";
 import Chat from "../models/Chat.js";
 import logger from "../common/logger.js";
+import Banned from "../models/Banned.js";
 
 
 class StudioController {
@@ -213,11 +214,18 @@ class StudioController {
 			if (!userId) {
 				return res.status(403).json({ message: 'Forbidden access denied' });
 			}
-			const user = await User.findById(userId).populate('mods.user', '-password');
+			const user = await User.findById(userId).populate('mods.user', 'username fullname profilePictureS3');
 			if (!user) {
 				return res.status(400).json({ message: 'User not found' });
 			}
-			const mods = user.mods;
+			var mods = user.mods;
+			mods = await Promise.all(
+				mods.map(async (mod) => {
+					delete mod._id;			
+					const profilePictureS3 = await getObjectURL(mod.user.profilePictureS3.key, mod.user.profilePictureS3.contentType);
+					return { ...mod.toObject(), ...mod.user.toObject(), profilePictureS3 };
+				})
+			);
 			return res.status(200).json({ data: mods });
 		} catch (error) {
 			logger.error("Call get all mods api error: " + error);
@@ -424,19 +432,19 @@ class StudioController {
 			let query = { user: userId, finished: true };
 
 			if (fromDate && toDate) {
-				query.dateStream = {
+				query.startAt = {
 					$gte: new Date(fromDate).setHours(0, 0, 0, 0),
 					$lte: new Date(toDate).setHours(23, 59, 59, 999)
 				};
 			}
 
-			var streams = Stream.find(query).sort({ dateStream: -1 }).limit(10);
+			var streams = Stream.find(query).sort({ startAt: -1 }).limit(10);
 			streams = await streams.lean();	
-			streams = streams.sort((a, b) => a.dateStream - b.dateStream);
+			streams = streams.sort((a, b) => a.startAt - b.startAt);
 			var datasets;
 			if (statsType === 'time_streaming') {
 				const statsStreams = streams.map(stream => {
-					const durationInMillis = new Date(stream.updatedAt) - new Date(stream.dateStream);
+					const durationInMillis = new Date(stream.finishAt) - new Date(stream.startAt);
 					const data = Math.round(durationInMillis / 1000);
 					return {
 						streamId: stream._id,
@@ -482,8 +490,8 @@ class StudioController {
 					const followersCount = await Follower.countDocuments({
 						streamer: stream.user,
 						createdAt: {
-							$gte: new Date(stream.dateStream).setHours(0, 0, 0, 0),
-							$lte: new Date(stream.updatedAt).setHours(23, 59, 59, 999) 
+							$gte: new Date(stream.startAt).setHours(0, 0, 0, 0),
+							$lte: new Date(stream.finishAt).setHours(23, 59, 59, 999) 
 						}
 					});
 
@@ -502,6 +510,22 @@ class StudioController {
 			return res.status(200).json({ datasets });
 		} catch (error) {
 			logger.error("Call to get stats api error: " + error);
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async banViewer(req, res, next) {
+		try {	
+			const { bannedId, streamId, typeBanned } = req.body;
+			logger.info(`Call ban viewer api with userId: ${bannedId}, streamId: ${streamId}`);
+			const banned = await Banned.create({
+				user: bannedId,
+				stream: streamId,
+				typeBanned: typeBanned
+			});
+			return res.status(200).json({ banned });
+		} catch (error) {
+			logger.error(`Call ban viewer api error: ${error}`);
 			return res.status(500).json({ message: error.message });
 		}
 	}
