@@ -101,6 +101,9 @@ class SearchController {
                     stream.user.profilePictureS3?.key,
                     stream.user.profilePictureS3?.contentType
                 );
+                if (stream.finished) {
+                    stream.duration = stream.finishAt - stream.startAt;
+                }
             }
             return res.status(200).json({ streams: streams });
             // }
@@ -112,7 +115,7 @@ class SearchController {
 
     async searchHistory(req, res) {
         try {
-            const userId = req.user.userId;
+            const { userId } = req.params;
             const { key, page } = req.query;
             logger.info(`Start search history api with userId ${userId}, key ${key}, page ${page}`);
             const searchedHistory = await History.aggregate([
@@ -134,6 +137,8 @@ class SearchController {
                 },
                 {
                     $match: {
+                        'streamInfo.finished': true,
+                        'streamInfo.rerun': true,
                         $or: [
                             { 'streamInfo.title': { $regex: key, $options: 'i' } },
                             { 'streamInfo.tags': { $in: [key] } }
@@ -173,7 +178,8 @@ class SearchController {
                 },
                 {
                     $limit: FETCH_LIMIT
-                }
+                },
+                { $sort: { createdAt: -1 } }
             ]);
             for (const history of searchedHistory) {
                 history.streamInfo.previewImage = await getObjectURL(
@@ -184,6 +190,9 @@ class SearchController {
                     history.streamInfo.user.profilePictureS3?.key, 
                     history.streamInfo.user.profilePictureS3?.contentType
                 );
+                if (history.streamInfo.finished) {
+                    history.streamInfo.duration = history.streamInfo.finishAt - history.streamInfo.startAt;
+                }
             }
             return res.status(200).json({ histories: searchedHistory });
         } catch (error) {
@@ -247,6 +256,7 @@ class SearchController {
             const streams = await Stream.find({
                 user: userId,
                 finished: true,
+                rerun: true,
                 $or: [
                     { title: { $regex: key, $options: 'i' } },
                     { tags: { $in: [key] } }
@@ -259,6 +269,7 @@ class SearchController {
 
             for (const stream of streams) {
                 stream.previewImage = await getObjectURL(stream.s3?.key, stream.s3?.contentType);
+                stream.duration = stream.finishAt - stream.startAt;
             }
 
             const totalStreams = await Stream.countDocuments({

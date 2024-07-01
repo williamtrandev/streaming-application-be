@@ -110,6 +110,8 @@ class StudioController {
 				return next(error);
 			}
 			const previewImage = await getObjectURL(stream?.s3?.key, stream?.s3?.contentType);
+			const numFollowers = await Follower.countDocuments({ user: stream.user._id });
+			stream.user.numFollowers = numFollowers;
 			stream.user.profilePicture = await getObjectURL(
 				stream.user.profilePictureS3.key,
 				stream.user.profilePictureS3.contentType
@@ -298,7 +300,11 @@ class StudioController {
 		try {
 			const streamId = req.params.streamId;
 			logger.info(`Start start stream api with streamId ${streamId}`);
-			const stream = await Stream.findByIdAndUpdate(streamId, { started: true }).lean();
+			const stream = await Stream.findByIdAndUpdate(streamId, { 
+				started: true,
+				startAt: Date.now()
+			}).lean();
+			const user = await User.findByIdAndUpdate(stream.user, { isLive: true });
 			var egressId =  null;
 			if(stream.rerun) {
 				egressId = await startRecord(streamId);
@@ -317,7 +323,11 @@ class StudioController {
 		try {
 			const { streamId, egressId } = req.params;
 			logger.info(`Start end stream api with streamId ${streamId}, egressId ${egressId}`);
-			const stream = await Stream.findByIdAndUpdate(streamId, { finished: true }).lean();
+			const stream = await Stream.findByIdAndUpdate(streamId, { 
+				finished: true,
+				finishAt: Date.now()
+			}).lean();
+			const user = await User.findByIdAndUpdate(stream.user, { isLive: false });
 			if(stream.rerun) {
                 await endRecord(egressId);
             }
