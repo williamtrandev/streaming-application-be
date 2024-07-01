@@ -137,6 +137,8 @@ class SearchController {
                 },
                 {
                     $match: {
+                        'streamInfo.finished': true,
+                        'streamInfo.rerun': true,
                         $or: [
                             { 'streamInfo.title': { $regex: key, $options: 'i' } },
                             { 'streamInfo.tags': { $in: [key] } }
