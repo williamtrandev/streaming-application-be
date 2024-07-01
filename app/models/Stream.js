@@ -21,10 +21,6 @@ const StreamSchema = new Schema({
 		type: Date,
 		required: true
 	},
-	duration: {
-		type: Number,
-		default: 0
-	},
 	numViewsLive: {
 		type: Number,
 		default: 0
@@ -49,6 +45,10 @@ const StreamSchema = new Schema({
 		type: Boolean,
 		default: false
 	},
+	startAt: {
+		type: Date,
+		default: null
+	},
 	rerun: {
 		type: Boolean,
 		default: false
@@ -60,6 +60,10 @@ const StreamSchema = new Schema({
 	finished: {
 		type: Boolean,
 		default: false
+	},
+	finishAt: {
+		type: Date,
+		default: null
 	}
 }, { timestamps: true });
 

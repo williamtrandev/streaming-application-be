@@ -55,7 +55,7 @@ const UserSchema = new Schema({
 	},
 	lastChangeUsername: {
 		type: Date,
-		default: Date.now
+		default: Date.now()
 	},
 	mods: [ModSchema]
 }, { timestamps: true });
