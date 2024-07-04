@@ -20,5 +20,6 @@ router.put('/notification', verifyToken, userController.toggleNotification);
 router.delete('/unfollow/:streamerId', verifyToken, userController.unfollow);
 router.get('/check-mod/:streamerId', verifyToken, userController.checkIsMod);
 router.get('/check-banned/:streamId', verifyToken, userController.checkIsBanned);
+router.get('/:userId/stream/:streamId/ban-permissions', verifyToken, userController.getBannedPermission);
 
 export default router;

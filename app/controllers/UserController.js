@@ -408,6 +408,25 @@ class UserController {
             return res.status(500).json({ message: error.message });
         }
     }
+
+    async getBannedPermission(req, res, next) {
+        try {
+            const { userId, streamId } = req.params;
+            logger.info(`Call api check banned permission with userId: ${userId}, streamId: ${streamId}`);
+            const banneds = await Banned.find({ user: userId, stream: streamId });
+            let permissions = ['chat', 'watch'];
+
+            const bannedTypes = new Set(banneds.map(ban => ban.typeBanned));
+
+            permissions = permissions.filter(permission => !bannedTypes.has(permission));
+
+            return res.status(200).json({ permissions });
+        } catch (error) {
+            logger.error(`Call check banned permission api error: ${error.message}`);
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
 }
 
 export default new UserController();
