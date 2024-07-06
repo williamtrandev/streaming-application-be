@@ -1,4 +1,4 @@
-// import { calculateStringSimilarity } from "../common/utils.js";
+import { calculateStringSimilarity } from "../common/utils.js";
 import logger from "../common/logger.js";
 import { FETCH_LIMIT } from "../constants/index.js";
 import History from "../models/History.js";
@@ -42,7 +42,7 @@ class SearchController {
                 .sort({ numViews: -1 })
                 .lean();
             for (const channel of channels) {
-                channel.profilePicture = await getObjectURL(
+                channel.profilePictureS3 = await getObjectURL(
                     channel.profilePictureS3?.key, 
                     channel.profilePictureS3?.contentType
                 );
