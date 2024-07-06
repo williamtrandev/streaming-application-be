@@ -118,6 +118,15 @@ const willSocket = (server) => {
 			if(bannedSocketId) {
 				io.to(bannedSocketId).emit("clientBannedChat");
 			}
+		});
+
+		socket.on("unbannedChat", (bannedId, streamId) => {
+			logger.info(`Start socket unbanned chat event with bannedId: ${bannedId}, streamId: ${streamId}`);
+			const bannedSocketId = userToSocketMap.get(bannedId);
+			logger.info(`Socket event unbanned chat with unbanned socket id ${bannedSocketId}`);
+			if (bannedSocketId) {
+				io.to(bannedSocketId).emit("clientUnbannedChat");
+			}
 		})
 
 		socket.on('disconnect', () => {

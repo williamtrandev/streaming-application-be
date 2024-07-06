@@ -539,6 +539,22 @@ class StudioController {
 			return res.status(500).json({ message: error.message });
 		}
 	}
+
+	async unbanViewer(req, res, next) {
+		try {	
+			const { bannedId, streamId, typeBanned } = req.body;
+			logger.info(`Call unban viewer api with userId: ${bannedId}, streamId: ${streamId}`);
+			const banned = await Banned.findOneAndDelete({
+				user: bannedId,
+				stream: streamId,
+				typeBanned: typeBanned
+			});
+			return res.status(200).json({ banned });
+		} catch (error) {
+			logger.error(`Call unban viewer api error: ${error}`);
+			return res.status(500).json({ message: error.message });
+		}
+	}
 }
 
 export default new StudioController();
