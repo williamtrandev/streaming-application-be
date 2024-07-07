@@ -4,6 +4,7 @@ import Stream from "./app/models/Stream.js";
 import Follower from "./app/models/Follower.js";
 import logger from "./app/common/logger.js";
 import { getObjectURL } from "./app/common/s3.js";
+import StatsViewer from "./app/models/StatsViewer.js";
 
 const willSocket = (server) => {
 	const io = new Server(server, {
@@ -153,6 +154,43 @@ const willSocket = (server) => {
 			}
 		});
 	});
+
+	setInterval(async () => {
+		const timestamp = new Date();
+		logger.info(`Start saving number of viewers at ${timestamp}`);
+		const today = new Date();
+		today.setHours(0, 0, 0, 0); 
+		const tomorrow = new Date(today);
+		tomorrow.setDate(today.getDate() + 1); 
+		const streams = await Stream.find({ 
+			started: true,
+			finished: false,
+			startAt: { $gte: today, $lt: tomorrow }
+		});
+		const streamIds = streams.map(stream => stream._id.toString());
+		const bulkOperations = [];
+		for (const streamId in rooms) {
+			if (rooms.hasOwnProperty(streamId) && streamIds.includes(streamId)) {
+				const viewerCount = rooms[streamId].size - 1;
+				bulkOperations.push({
+					updateOne: {
+						filter: { stream: streamId },
+						update: { $push: { numViewersPerMin: { timestamp, count: viewerCount } } },
+						upsert: true,
+					}
+				});
+			}
+			if(bulkOperations.length > 0) {
+				try {
+					const result = await StatsViewer.bulkWrite(bulkOperations);
+					logger.info(`Save number of viewers at ${timestamp}, status: ${result.ok === 1}`);
+				} catch(error) {
+					logger.error(`Save number of viewers failed: ${error}`);
+				}
+			}
+		}
+	}, 30000);
 };
+
 
 export default willSocket;

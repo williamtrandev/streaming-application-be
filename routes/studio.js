@@ -23,6 +23,7 @@ router.post('/viewer-token', verifyToken, studioController.getViewerToken);
 router.delete('/stream', verifyToken, studioController.deleteSavedStreams);
 router.get('/record/:streamId', verifyToken, studioController.getVideoRecord);
 router.get('/stats', verifyToken, studioController.getStats);
+router.get('/stats-viewer', verifyToken, studioController.getStatsViewer);
 router.post('/ban-viewer', verifyToken, studioController.banViewer);
 router.post('/unban-viewer', verifyToken, studioController.unbanViewer);
 
