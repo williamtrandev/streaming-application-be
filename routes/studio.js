@@ -19,8 +19,8 @@ router.post('/mod', verifyToken, studioController.addMod);
 router.delete('/mod/:modId', verifyToken, studioController.deleteMod);
 router.get('/stream-key/:username/:streamId', verifyToken, studioController.getServerUrlAndStreamKey);
 router.post('/streamer-token', verifyToken, studioController.getStreamerToken);
-router.post('/viewer-token', verifyToken, studioController.getViewerToken);
+router.post('/viewer-token', studioController.getViewerToken);
 router.delete('/stream', verifyToken, studioController.deleteSavedStreams);
-router.get('/record/:streamId', verifyToken, studioController.getVideoRecord);
+router.get('/record/:streamId', studioController.getVideoRecord);
 
 export default router;

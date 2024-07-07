@@ -40,7 +40,7 @@ class ChatController {
 			const messages = await query
 				.populate({
 					path: 'user',
-					select: '_id username email fullname profilePicture'
+					select: '_id username email fullname profilePictureS3'
 				})
 				.lean()
 				.exec();

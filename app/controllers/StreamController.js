@@ -73,24 +73,83 @@ class StreamController {
         try {
             const { userId, page } = req.params;
             logger.info(`Start get liked streams api with userId ${userId}, page ${page}`);
-            const histories = await History.find({ 
-                user: userId, 
-                liked: true,
-                $or: [
-                    { finished: true, rerun: true },
-                    { finished: false }
-                ]
-            })
-                .populate({
-                    path: "stream",
-                    populate: {
-                        path: "user",
-                        select: "username profilePictureS3 fullname"
+            // const histories = await History.find({ 
+            //     user: userId, 
+            //     liked: true
+            // })
+            //     .populate({
+            //         path: "stream",
+            //         populate: {
+            //             path: "user",
+            //             select: "username profilePictureS3 fullname"
+            //         }
+            //     })
+            //     .skip((page - 1) * FETCH_LIMIT)
+            //     .limit(FETCH_LIMIT)
+            //     .lean();
+            const histories = await History.aggregate([
+                {
+                    $match: {
+                        user: Types.ObjectId.createFromHexString(userId),
+                        liked: true
                     }
-                })
-                .skip((page - 1) * FETCH_LIMIT)
-                .limit(FETCH_LIMIT)
-                .lean();
+                },
+                {
+                    $lookup: {
+                        from: 'streams',
+                        localField: 'stream',
+                        foreignField: '_id',
+                        as: 'stream'
+                    }
+                },
+                {
+                    $unwind: '$stream'
+                },
+                {
+                    $match: {
+                        'stream.finished': true,
+                        'stream.rerun': true
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'stream.user',
+                        foreignField: '_id',
+                        as: 'stream.user'
+                    }
+                },
+                {
+                    $unwind: '$stream.user'
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        user: 1,
+                        liked: 1,
+                        'stream._id': 1,
+                        'stream.title': 1,
+                        'stream.tags': 1,
+                        'stream.s3': 1,
+                        'stream.numViews': 1,
+                        'stream.dateStream': 1,
+                        'stream.started': 1,
+                        'stream.finished': 1,
+                        'stream.startAt': 1,
+                        'stream.finishAt': 1,
+                        'stream.user.username': 1,
+                        'stream.user.fullname': 1,
+                        'stream.user.profilePictureS3': 1
+                    }
+                },
+                {
+                    $skip: (page - 1) * FETCH_LIMIT
+                },
+                {
+                    $limit: FETCH_LIMIT
+                },
+                { $sort: { updatedAt: -1 } }
+            ]);
             for (const history of histories) {
                 history.stream.previewImage = await getObjectURL(
                     history.stream.s3.key,

@@ -2,6 +2,8 @@ import { Server } from "socket.io";
 import User from "./app/models/User.js";
 import Stream from "./app/models/Stream.js";
 import Follower from "./app/models/Follower.js";
+import { getObjectURL } from "./app/common/s3.js";
+import { endRecord } from "./app/common/livekit.js";
 
 const willSocket = (server) => {
 	const io = new Server(server, {
@@ -14,6 +16,8 @@ const willSocket = (server) => {
 	const rooms = {};
 	const userToSocketMap = new Map();
 	const socketToUserMap = new Map();
+	const socketToStreamMap = new Map();
+	const socketToEgressMap = new Map();
 
 	io.on("connection", async (socket) => {
 		socket.on("logged", (userId) => {
@@ -77,19 +81,36 @@ const willSocket = (server) => {
 			});
 			if (socketIds.length > 0) {
 				console.log("Send notification", userId, socketIds, stream);
+				const profilePicture = await getObjectURL(
+					user.profilePictureS3.key,
+					user.profilePictureS3.contentType
+				);
 				const notification = {
 					...stream,
 					user: {
 						username: user.username,
 						fullname: user.fullname,
-						profilePicture: user.profilePicture
+						profilePicture: profilePicture
 					}
 				};
 				io.to(socketIds).emit("receiveNotification", notification);
 			}
 		});
 
-		socket.on('disconnect', () => {
+		socket.on('startStream', (data) => {
+			const { streamId, egressId } = data;
+			console.log(`Client ${socket.id} start stream: ${streamId} - ${egressId}`);
+			socketToStreamMap.set(socket.id, streamId);
+			socketToEgressMap.set(socket.id, egressId);
+		});
+
+		socket.on('endStream', () => {
+			console.log(`Client ${socket.id} end stream`);
+			socketToStreamMap.delete(socket.id);
+			socketToEgressMap.delete(socket.id);
+		})
+
+		socket.on('disconnect', async () => {
 			console.log(`Client disconnected: ${socket.id}`);
 			var streamId = null;
 			Object.keys(rooms).forEach((room) => {
@@ -110,6 +131,21 @@ const willSocket = (server) => {
 			}
 			if (rooms[streamId]) {
 				io.to(streamId).emit('updateViewers', { streamId, viewers: rooms[streamId].size - 1 });
+			}
+			const curStreamId = socketToStreamMap.get(socket.id);
+			const egressId = socketToEgressMap.get(socket.id);
+			if (curStreamId) {
+				console.log(`End stream: ${socket.id} - ${curStreamId} - ${egressId}`);
+				const stream = await Stream.findByIdAndUpdate(curStreamId, { 
+					finished: true,
+					finishAt: Date.now()
+				});
+				const user = await User.findByIdAndUpdate(stream.user, { isLive: false });
+				if(stream.rerun) {
+					await endRecord(egressId);
+				}
+				socketToStreamMap.delete(socket.id);
+				socketToEgressMap.delete(socket.id);
 			}
 		});
 	});

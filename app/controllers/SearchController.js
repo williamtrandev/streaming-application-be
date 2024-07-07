@@ -85,7 +85,11 @@ class SearchController {
                 $or: [
                     { title: { $regex: key, $options: 'i' } },
                     { tags: { $in: [key] } }
-                ]
+                ],
+                $or: [
+                    { finished: false },
+                    { finished: true, rerun: true }
+                ],
             })
                 .populate({
                     path: 'user',
@@ -168,6 +172,10 @@ class SearchController {
                         'streamInfo.s3': 1,
                         'streamInfo.numViews': 1,
                         'streamInfo.dateStream': 1,
+                        'streamInfo.started': 1,
+                        'streamInfo.finished': 1,
+                        'streamInfo.startAt': 1,
+                        'streamInfo.finishAt': 1,
                         'streamInfo.user.username': 1,
                         'streamInfo.user.fullname': 1,
                         'streamInfo.user.profilePictureS3': 1

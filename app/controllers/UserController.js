@@ -292,7 +292,7 @@ class UserController {
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
-            const numFollowers = await Follower.countDocuments({ user: user._id });
+            const numFollowers = await Follower.countDocuments({ streamer: user._id });
             const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
             const profileBanner = await getObjectURL(user.profileBannerS3.key, user.profileBannerS3.contentType);
             return res.status(200).json({

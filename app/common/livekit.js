@@ -85,7 +85,7 @@ const createIngress = async (streamId, username) => {
     };
 
     const ingress = await ingressClient.createIngress(IngressInput.RTMP_INPUT, options);
-	// await redisClient.getInstance().setEx(`${streamId}_ingress`, 3600, ingress);
+	await redisClient.getInstance().setEx(`${streamId}_ingress`, 3600, ingress);
     return ingress;
 }
 
