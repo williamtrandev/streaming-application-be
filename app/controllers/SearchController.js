@@ -1,4 +1,4 @@
-// import { calculateStringSimilarity } from "../common/utils.js";
+import { calculateStringSimilarity } from "../common/utils.js";
 import logger from "../common/logger.js";
 import { FETCH_LIMIT } from "../constants/index.js";
 import History from "../models/History.js";
@@ -42,7 +42,7 @@ class SearchController {
                 .sort({ numViews: -1 })
                 .lean();
             for (const channel of channels) {
-                channel.profilePicture = await getObjectURL(
+                channel.profilePictureS3 = await getObjectURL(
                     channel.profilePictureS3?.key, 
                     channel.profilePictureS3?.contentType
                 );
@@ -232,7 +232,7 @@ class SearchController {
                     { fullname: { $regex: key, $options: 'i' } }
                 ]
             }));
-            var channels = User.find({ $or: regexQueries.flat() });
+            var channels = User.find({ $or: regexQueries.flat() }, '-password');
             if (excludedUserIds.length > 0) {
                 channels = channels.where('_id').nin(excludedUserIds);
             }
@@ -240,6 +240,12 @@ class SearchController {
                 channels = channels.limit(limit);
             }
             channels = await channels.exec();
+            channels = await Promise.all(
+                channels.map(async (channel) => {
+                    const profilePictureS3 = await getObjectURL(channel.profilePictureS3.key, channel.profilePictureS3.contentType);
+                    return { ...channel.toObject(), profilePictureS3 };
+                })
+            );
             const sortedChannels = channels.sort((a, b) => {
                 const similarityA = calculateStringSimilarity(a.username, q) + calculateStringSimilarity(a.fullname, q);
                 const similarityB = calculateStringSimilarity(b.username, q) + calculateStringSimilarity(b.fullname, q);

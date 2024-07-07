@@ -5,6 +5,8 @@ import { Types } from "mongoose";
 import { getObjectURL, putImageObject } from "../common/s3.js";
 import { S3_PATH } from "../constants/index.js";
 import logger from "../common/logger.js";
+import Stream from "../models/Stream.js";
+import Banned from "../models/Banned.js";
 
 class UserController {
     async changeProfilePicture(req, res) {
@@ -377,6 +379,54 @@ class UserController {
             return res.status(500).json({ message: error.message });
         }
     }
+
+    async checkIsMod(req, res, next) {
+        try {
+            const userId = req.user.userId;
+            const streamerId = req.params.streamerId;
+            const streamer = await User.findById(streamerId);
+            logger.info(`Call api check is mod with userId: ${userId}, streamerId: ${streamerId}`);
+            const userIsMod = streamer.mods.some(mod => mod.user.toString() === userId);
+            return res.status(200).json({ userIsMod })
+        } catch (error) {
+            logger.error(`Call check is mod api error: ${error.message}`);
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async checkIsBanned(req, res, next) {
+        try {
+            const userId = req.user.userId;
+            const streamId = req.params.streamId;
+            const typeBanned = req.query.typeBanned;
+            logger.info(`Call api check is banned with userId: ${userId}, streamId: ${streamId}, typeBanned: ${typeBanned}`);
+            const count = await Banned.countDocuments({ user: userId, stream: streamId, typeBanned: typeBanned });
+            const isBanned = count > 0;
+            return res.status(200).json({ isBanned });
+        } catch (error) {
+            logger.error(`Call check is banned api error: ${error.message}`);
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+    async getBannedPermission(req, res, next) {
+        try {
+            const { userId, streamId } = req.params;
+            logger.info(`Call api check banned permission with userId: ${userId}, streamId: ${streamId}`);
+            const banneds = await Banned.find({ user: userId, stream: streamId });
+            let permissions = ['chat', 'watch'];
+
+            const bannedTypes = new Set(banneds.map(ban => ban.typeBanned));
+
+            permissions = permissions.filter(permission => !bannedTypes.has(permission));
+
+            return res.status(200).json({ permissions });
+        } catch (error) {
+            logger.error(`Call check banned permission api error: ${error.message}`);
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
 }
 
 export default new UserController();
