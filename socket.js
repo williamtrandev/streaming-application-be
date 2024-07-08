@@ -2,8 +2,9 @@ import { Server } from "socket.io";
 import User from "./app/models/User.js";
 import Stream from "./app/models/Stream.js";
 import Follower from "./app/models/Follower.js";
-import logger from "./app/common/logger.js";
 import { getObjectURL } from "./app/common/s3.js";
+import { endRecord } from "./app/common/livekit.js";
+import logger from "./app/common/logger.js";
 import StatsViewer from "./app/models/StatsViewer.js";
 
 const willSocket = (server) => {
@@ -17,6 +18,8 @@ const willSocket = (server) => {
 	const rooms = {};
 	const userToSocketMap = new Map();
 	const socketToUserMap = new Map();
+	const socketToStreamMap = new Map();
+	const socketToEgressMap = new Map();
 
 	io.on("connection", async (socket) => {
 		socket.on("logged", (userId) => {
@@ -66,8 +69,8 @@ const willSocket = (server) => {
 			const { streamId, user, content, duration, isStreamer } = data;
 			console.log(rooms[streamId]);
 			if (user?.profilePictureS3?.key) {
-				const profilePictureS3 = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
-				user.profilePictureS3 = profilePictureS3;
+				const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
+				user.profilePicture = profilePicture;
 			}
 			io.to(streamId).emit("newMessage", { user, content, isStreamer });
 			console.log("Sent message");
@@ -87,6 +90,10 @@ const willSocket = (server) => {
 			});
 			if (socketIds.length > 0) {
 				console.log("Send notification", userId, socketIds, stream);
+				// const profilePicture = await getObjectURL(
+				// 	user.profilePictureS3.key,
+				// 	user.profilePictureS3.contentType
+				// );
 				const notification = {
 					...stream,
 					user: {
@@ -98,6 +105,19 @@ const willSocket = (server) => {
 				io.to(socketIds).emit("receiveNotification", notification);
 			}
 		});
+
+		socket.on('startStream', (data) => {
+			const { streamId, egressId } = data;
+			console.log(`Client ${socket.id} start stream: ${streamId} - ${egressId}`);
+			socketToStreamMap.set(socket.id, streamId);
+			socketToEgressMap.set(socket.id, egressId);
+		});
+
+		socket.on('endStream', () => {
+			console.log(`Client ${socket.id} end stream`);
+			socketToStreamMap.delete(socket.id);
+			socketToEgressMap.delete(socket.id);
+		})
 
 		socket.on("banned", (bannedId, streamId) => {
 			logger.info(`Start socket banned event with bannedId: ${bannedId}, streamId: ${streamId}`);
@@ -130,7 +150,7 @@ const willSocket = (server) => {
 			}
 		})
 
-		socket.on('disconnect', () => {
+		socket.on('disconnect', async () => {
 			console.log(`Client disconnected: ${socket.id}`);
 			var streamId = null;
 			Object.keys(rooms).forEach((room) => {
@@ -151,6 +171,21 @@ const willSocket = (server) => {
 			}
 			if (rooms[streamId]) {
 				io.to(streamId).emit('updateViewers', { streamId, viewers: rooms[streamId].size - 1 });
+			}
+			const curStreamId = socketToStreamMap.get(socket.id);
+			const egressId = socketToEgressMap.get(socket.id);
+			if (curStreamId) {
+				console.log(`End stream: ${socket.id} - ${curStreamId} - ${egressId}`);
+				const stream = await Stream.findByIdAndUpdate(curStreamId, { 
+					finished: true,
+					finishAt: Date.now()
+				});
+				const user = await User.findByIdAndUpdate(stream.user, { isLive: false });
+				if(stream.rerun) {
+					await endRecord(egressId);
+				}
+				socketToStreamMap.delete(socket.id);
+				socketToEgressMap.delete(socket.id);
 			}
 		});
 	});

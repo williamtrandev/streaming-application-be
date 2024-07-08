@@ -144,13 +144,18 @@ class UserController {
     async getMiniProfile(req, res) {
         try {
             const { userId } = req.params;
-            const user = await User.findById(userId);
+            const user = await User.findById(userId).lean();
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
-            const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
+            
+            if (user?.profilePictureS3?.key) {
+                const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
+                user.profilePicture = profilePicture;
+            }
             return res.status(200).json({
-                profilePicture: profilePicture,
+                profilePicture: user.profilePicture,
+                profilePictureS3: user.profilePictureS3,
                 username: user.username,
                 fullname: user.fullname
             });
@@ -294,7 +299,7 @@ class UserController {
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
-            const numFollowers = await Follower.countDocuments({ user: user._id });
+            const numFollowers = await Follower.countDocuments({ streamer: user._id });
             const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
             const profileBanner = await getObjectURL(user.profileBannerS3.key, user.profileBannerS3.contentType);
             return res.status(200).json({

@@ -42,7 +42,7 @@ class SearchController {
                 .sort({ numViews: -1 })
                 .lean();
             for (const channel of channels) {
-                channel.profilePictureS3 = await getObjectURL(
+                channel.profilePicture = await getObjectURL(
                     channel.profilePictureS3?.key, 
                     channel.profilePictureS3?.contentType
                 );
@@ -82,9 +82,19 @@ class SearchController {
             //     return res.status(200).json({ streams: sortedStreams });
             // } else {
             const streams = await Stream.find({
-                $or: [
-                    { title: { $regex: key, $options: 'i' } },
-                    { tags: { $in: [key] } }
+                $and: [
+                    {
+                        $or: [
+                            { title: { $regex: key, $options: 'i' } },
+                            { tags: { $in: [key] } }
+                        ]
+                    },
+                    {
+                        $or: [
+                            { finished: false },
+                            { finished: true, rerun: true }
+                        ]
+                    }
                 ]
             })
                 .populate({
@@ -168,6 +178,10 @@ class SearchController {
                         'streamInfo.s3': 1,
                         'streamInfo.numViews': 1,
                         'streamInfo.dateStream': 1,
+                        'streamInfo.started': 1,
+                        'streamInfo.finished': 1,
+                        'streamInfo.startAt': 1,
+                        'streamInfo.finishAt': 1,
                         'streamInfo.user.username': 1,
                         'streamInfo.user.fullname': 1,
                         'streamInfo.user.profilePictureS3': 1

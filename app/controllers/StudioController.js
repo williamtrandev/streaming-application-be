@@ -112,7 +112,7 @@ class StudioController {
 				return next(error);
 			}
 			const previewImage = await getObjectURL(stream?.s3?.key, stream?.s3?.contentType);
-			const numFollowers = await Follower.countDocuments({ user: stream.user._id });
+			const numFollowers = await Follower.countDocuments({ streamer: stream.user._id });
 			stream.user.numFollowers = numFollowers;
 			stream.user.profilePicture = await getObjectURL(
 				stream.user.profilePictureS3.key,
@@ -386,8 +386,7 @@ class StudioController {
 
 	async getViewerToken(req, res) {
 		try {
-			const { streamId } = req.body;
-			const userId = req.user.userId;
+			const { streamId, userId } = req.body;
 			logger.info(`Start get viewer token with streamId ${streamId}, userId ${userId}`);
 
 			const token = await generateViewerToken(streamId, userId);
