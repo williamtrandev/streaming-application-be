@@ -50,9 +50,9 @@ class ChatController {
 						message.user.profilePictureS3.key,
 						message.user.profilePictureS3.contentType
 					);
-					message.user.profilePictureS3 = s3Image;
+					message.user.profilePicture = s3Image;
 				} else {
-					message.user.profilePictureS3 = null;
+					message.user.profilePicture = null;
 				}
 				return message;
 			});

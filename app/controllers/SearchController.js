@@ -42,7 +42,7 @@ class SearchController {
                 .sort({ numViews: -1 })
                 .lean();
             for (const channel of channels) {
-                channel.profilePictureS3 = await getObjectURL(
+                channel.profilePicture = await getObjectURL(
                     channel.profilePictureS3?.key, 
                     channel.profilePictureS3?.contentType
                 );
@@ -82,14 +82,20 @@ class SearchController {
             //     return res.status(200).json({ streams: sortedStreams });
             // } else {
             const streams = await Stream.find({
-                $or: [
-                    { title: { $regex: key, $options: 'i' } },
-                    { tags: { $in: [key] } }
-                ],
-                $or: [
-                    { finished: false },
-                    { finished: true, rerun: true }
-                ],
+                $and: [
+                    {
+                        $or: [
+                            { title: { $regex: key, $options: 'i' } },
+                            { tags: { $in: [key] } }
+                        ]
+                    },
+                    {
+                        $or: [
+                            { finished: false },
+                            { finished: true, rerun: true }
+                        ]
+                    }
+                ]
             })
                 .populate({
                     path: 'user',

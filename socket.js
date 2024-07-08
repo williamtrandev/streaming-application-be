@@ -68,8 +68,8 @@ const willSocket = (server) => {
 			const { streamId, user, content, duration, isStreamer } = data;
 			console.log(rooms[streamId]);
 			if (user?.profilePictureS3?.key) {
-				const profilePictureS3 = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
-				user.profilePictureS3 = profilePictureS3;
+				const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
+				user.profilePicture = profilePicture;
 			}
 			io.to(streamId).emit("newMessage", { user, content, isStreamer });
 			console.log("Sent message");
