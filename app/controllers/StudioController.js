@@ -10,6 +10,7 @@ import History from "../models/History.js";
 import Chat from "../models/Chat.js";
 import logger from "../common/logger.js";
 import Banned from "../models/Banned.js";
+import StatsViewer from "../models/StatsViewer.js";
 
 
 class StudioController {
@@ -551,6 +552,28 @@ class StudioController {
 			return res.status(200).json({ banned });
 		} catch (error) {
 			logger.error(`Call unban viewer api error: ${error}`);
+			return res.status(500).json({ message: error.message });
+		}
+	}
+
+	async getStatsViewer(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			logger.error(`Start get stats viewer api with userId: ${userId}`);
+			const latestStream = await Stream.findOne({
+				user: userId,
+				started: true,
+				finished: true
+			}).sort({ finishAt: -1 });
+			const statsViewer = await StatsViewer.findOne({ stream: latestStream._id });
+			if(!statsViewer) {
+				logger.error(`Get stats viewer with streamId: ${latestStream._id} not found`);
+				return res.status(400).json({ message: 'Stats not found' });
+			}
+			const numViewersPerMin = statsViewer.numViewersPerMin;
+			return res.status(200).json({ numViewersPerMin });
+		} catch (error) {
+			logger.error(`Call get stats viewer api error: ${error}`);
 			return res.status(500).json({ message: error.message });
 		}
 	}
