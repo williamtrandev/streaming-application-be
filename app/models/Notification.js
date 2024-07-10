@@ -7,9 +7,17 @@ const NotificationSchema = new Schema({
 		type: Schema.Types.ObjectId,
 		ref: 'User',
 	},
-	content: {
-		type: String
+	streamer: {
+		type: Schema.Types.ObjectId,
+		ref: 'User',
 	},
+	stream: {
+		type: Schema.Types.ObjectId,
+		ref: 'Stream',
+	},
+	// content: {
+	// 	type: String
+	// },
 	read: {
 		type: Boolean,
 		default: false
