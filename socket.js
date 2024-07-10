@@ -90,17 +90,16 @@ const willSocket = (server) => {
 			});
 			if (socketIds.length > 0) {
 				console.log("Send notification", userId, socketIds, stream);
-				// const profilePicture = await getObjectURL(
-				// 	user.profilePictureS3.key,
-				// 	user.profilePictureS3.contentType
-				// );
+				const profilePicture = await getObjectURL(
+					user.profilePictureS3.key,
+					user.profilePictureS3.contentType
+				);
 				const notification = {
-					...stream,
-					user: {
-						username: user.username,
+					streamer: {
 						fullname: user.fullname,
-						profilePictureS3: user.profilePictureS3
-					}
+						profilePicture: profilePicture
+					},
+					stream: stream
 				};
 				io.to(socketIds).emit("receiveNotification", notification);
 			}

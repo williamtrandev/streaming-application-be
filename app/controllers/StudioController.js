@@ -51,15 +51,16 @@ class StudioController {
 	}
 	async saveNotification(req, res, next) {
 		try {
-			const { userId, content } = req.body;
+			const { userId, streamId } = req.body;
 			logger.info(`Start save notification with body ${req.body}`);
-			if (!userId || !content) {
-				return res.status(400).json({ message: "Please enter userId, content" });
+			if (!userId || !streamId) {
+				return res.status(400).json({ message: "Please enter userId, streamId" });
 			}
 			const followers = await Follower.find({ streamer: userId, receiveNotification: true });
 			const notifications = followers.map(follower => ({
 				user: follower.user,
-				content: content
+				streamer: userId,
+				stream: streamId
 			}));
 
 			const createdNotifications = await Notification.insertMany(notifications);
@@ -76,18 +77,51 @@ class StudioController {
 			return res.status(500).json({ message: error.message });
 		}
 	}
+	// async getNotification(req, res, next) {
+	// 	try {
+	// 		const userId = req.user.userId;
+	// 		logger.info(`Start get notification for ${userId}`);
+	// 		if (!userId) {
+	// 			return res.status(400).json({ message: "Please login" });
+	// 		}
+	// 		const notifications = await Notification.find({ user: userId })
+	// 			.sort({ createdAt: -1 })
+	// 			.limit(10)
+	// 			.populate('user', 'username fullname profilePicture')
+	// 			.exec();
+	// 		return res.status(200).json({
+	// 			notifications: notifications
+	// 		});
+	// 	} catch (error) {
+	// 		logger.error("Call get notification api error: " + error);
+	// 		return res.status(500).json({ message: error.message });
+	// 	}
+	// }
 	async getNotification(req, res, next) {
 		try {
 			const userId = req.user.userId;
-			logger.info(`Start get notification for ${userId}`);
+			const page = req.params.page;
+			logger.info(`Start get notification for ${userId}, page ${page}`);
 			if (!userId) {
 				return res.status(400).json({ message: "Please login" });
 			}
 			const notifications = await Notification.find({ user: userId })
 				.sort({ createdAt: -1 })
-				.limit(10)
-				.populate('user', 'username fullname profilePicture')
+				.skip((page - 1) * 10)
+                .limit(10)
+				.populate('streamer', 'fullname profilePictureS3')
+				.populate('stream', '_id title')
+				.lean()
 				.exec();
+			for (const notification of notifications) {
+				if (notification?.streamer?.profilePictureS3?.key) {
+					notification.streamer.profilePicture = await getObjectURL(
+						notification.streamer.profilePictureS3.key,
+						notification.streamer.profilePictureS3.contentType
+					);
+				}
+			}
+			// console.log("TEST", notifications);
 			return res.status(200).json({
 				notifications: notifications
 			});
