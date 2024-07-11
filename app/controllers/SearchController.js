@@ -280,13 +280,19 @@ class SearchController {
 
             const totalStreams = await Stream.countDocuments({
                 user: userId,
+                finished: true,
+                rerun: true,
                 $or: [
                     { title: { $regex: key, $options: 'i' } },
                     { tags: { $in: [key] } }
                 ]
             });
             const numPages = Math.ceil(totalStreams / FETCH_LIMIT);
-            return res.status(200).json({ streams: streams, numPages: numPages });
+            console.log(totalStreams, FETCH_LIMIT);
+            return res.status(200).json({ 
+                streams: streams, 
+                numPages: numPages 
+            });
         } catch (error) {
             console.log(error)
             return res.status(500).json({ message: error.message });
