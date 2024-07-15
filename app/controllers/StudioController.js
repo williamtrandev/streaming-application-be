@@ -493,7 +493,7 @@ class StudioController {
 					return {
 						streamId: stream._id,
 						title: stream.title,
-						dateStream: stream.dateStream,
+						dateStream: stream.startAt,
 						data: data
 					};
 				});
@@ -506,7 +506,7 @@ class StudioController {
 					return {
 						streamId: stream._id,
 						title: stream.title,
-						dateStream: stream.dateStream,
+						dateStream: stream.startAt,
 						data: stream.numLikes || 0
 					};
 				});
@@ -514,7 +514,7 @@ class StudioController {
 					return {
 						streamId: stream._id,
 						title: stream.title,
-						dateStream: stream.dateStream,
+						dateStream: stream.startAt,
 						data: stream.numDislikes || 0
 					};
 				});
@@ -542,7 +542,7 @@ class StudioController {
 					return {
 						streamId: stream._id,
 						title: stream.title,
-						dateStream: stream.dateStream,
+						dateStream: stream.startAt,
 						data: followersCount || 0
 					};
 				}));
