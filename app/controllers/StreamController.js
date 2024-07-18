@@ -73,20 +73,6 @@ class StreamController {
         try {
             const { userId, page } = req.params;
             logger.info(`Start get liked streams api with userId ${userId}, page ${page}`);
-            // const histories = await History.find({ 
-            //     user: userId, 
-            //     liked: true
-            // })
-            //     .populate({
-            //         path: "stream",
-            //         populate: {
-            //             path: "user",
-            //             select: "username profilePictureS3 fullname"
-            //         }
-            //     })
-            //     .skip((page - 1) * FETCH_LIMIT)
-            //     .limit(FETCH_LIMIT)
-            //     .lean();
             const histories = await History.aggregate([
                 {
                     $match: {
@@ -163,7 +149,6 @@ class StreamController {
                     history.stream.duration = history.stream.finishAt - history.stream.startAt;
                 }
             }
-            // const streams = histories.map(history => history.stream);
             return res.status(200).json({
                 histories
             });

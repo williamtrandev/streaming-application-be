@@ -278,7 +278,17 @@ class AuthController {
 			});
 			const savedUser = await newUser.save();
 			// login
-			const token = jwt.sign({ userId: savedUser._id }, process.env.JWT_SECRET);
+			// const token = jwt.sign({ userId: savedUser._id }, process.env.JWT_SECRET);
+			const token = jwt.sign(
+				{ userId: savedUser._id },
+				process.env.JWT_SECRET,
+				{ expiresIn: process.env.TOKEN_EXPIRE } 
+			);
+			const refreshToken = jwt.sign(
+				{ userId: savedUser._id }, 
+				process.env.REFRESH_JWT_SECRET,
+				{ expiresIn: process.env.REFRESH_EXPIRE }
+			);
 
 			return res.status(201).json({
 				message: "Register successfully",
@@ -286,7 +296,8 @@ class AuthController {
 					_id: savedUser._id,
 					username: savedUser.username
 				},
-				accessToken: token
+				accessToken: token,
+				refreshToken: refreshToken
 			});
 		} catch (error) {
 			return res.status(500).json({ message: error.message });
@@ -311,11 +322,6 @@ class AuthController {
 				const newHashPassword = await bcrypt.hash(newPassword, 10);
 				user.password = newHashPassword;
 				await user.save();
-				// const updatedUser = await User.findByIdAndUpdate(
-				// 	userId,
-				// 	{ password: newHashPassword },
-				// 	{ new: true }
-				// );
 				return res.status(200).json({ message: "Change password successfully" });
 			} else {
 				return res.status(400).json({ message: "Your current password was incorrect" });
@@ -339,13 +345,15 @@ class AuthController {
 				return res.status(400).json({ message: "User not found" });
 			}
 			// Check if 14 days from last time change username
+			const fourteenDaysInMilliseconds = 14 * 24 * 60 * 60 * 1000;
 			const today = new Date();
-			if (today.getDate() - user.lastChangeUsername.getDate() < 14) {
-				return res.status(403).json({ message: "Username can only change once every 14 days" })
+			if (today - user.lastChangeUsername < fourteenDaysInMilliseconds) {
+				return res.status(403).json({ message: "Username can only change once every 14 days" });
 			}
 			const match = await bcrypt.compare(password, user.password);
 			if (match) {
 				user.username = username;
+				user.lastChangeUsername = today;
 				await user.save();
 				return res.status(200).json({ 
 					message: "Change username successfully.",
