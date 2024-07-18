@@ -69,28 +69,6 @@ class UserController {
         }
     }
 
-    async changeDisplayName(req, res) {
-        try {
-            const userId = req.user.userId;
-            const newDisplayName = req.body.newDisplayName;
-            if (!newDisplayName) {
-                return res.status(400).json({ message: "Please enter new display name" });
-            }
-            const user = await User.findById(userId);
-            if (!user) {
-                return res.status(404).json({ message: "User not found" });
-            }
-            user.fullname = newDisplayName;
-            await user.save();
-            return res.status(200).json({
-                newDisplayName: user.fullname,
-                message: "Change display name successfully"
-            });
-        } catch (error) {
-            return res.status(500).json({ message: error.message });
-        }
-    }
-
     async changeProfileInfo(req, res) {
         try {
             const userId = req.user.userId;
@@ -124,6 +102,7 @@ class UserController {
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
+            const fourteenDaysInMilliseconds = 14 * 24 * 60 * 60 * 1000;
             const today = new Date();
             const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
             const profileBanner = await getObjectURL(user.profileBannerS3.key, user.profileBannerS3.contentType);
@@ -134,7 +113,7 @@ class UserController {
                 fullname: user.fullname,
                 about: user.about,
                 links: user.links,
-                canChangeUsername: (today.getDate() - user.lastChangeUsername.getDate()) >= 14
+                canChangeUsername: today - user.lastChangeUsername >= fourteenDaysInMilliseconds
             });
         } catch (error) {
             return res.status(500).json({ message: error.message });
