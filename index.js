@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(cors(
 	{
-		origin: [process.env.ORIGIN]
+		origin: [process.env.FE_ORIGIN]
 	}
 ));
 app.use(morgan('dev'));
