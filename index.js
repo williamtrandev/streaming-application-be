@@ -14,7 +14,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '10mb' }));
 const corsOptions = {
 	origin: process.env.FE_ORIGIN,
+	methods: ['GET', 'POST', 'PUT', 'DELETE'],
+	allowedHeaders: ['Content-Type', 'Authorization'],
 };
+console.log(corsOptions);
 app.use(cors(corsOptions));
 app.use(morgan('dev'));
 // app.use(express.static(path.join(__dirname, "public")));
