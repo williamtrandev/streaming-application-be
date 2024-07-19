@@ -10,7 +10,7 @@ import StatsViewer from "./app/models/StatsViewer.js";
 const willSocket = (server) => {
 	const io = new Server(server, {
 		cors: {
-			origin: process.env.ORIGIN,
+			origin: process.env.FE_ORIGIN,
 			credentials: true
 		}
 	});
