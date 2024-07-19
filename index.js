@@ -12,11 +12,10 @@ dotenv.config();
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '10mb' }));
-app.use(cors(
-	{
-		origin: [process.env.FE_ORIGIN]
-	}
-));
+const corsOptions = {
+	origin: process.env.FE_ORIGIN,
+};
+app.use(cors(corsOptions));
 app.use(morgan('dev'));
 // app.use(express.static(path.join(__dirname, "public")));
 
