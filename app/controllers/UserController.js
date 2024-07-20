@@ -301,7 +301,7 @@ class UserController {
         }
     }
 
-    async getStreamerABout(req, res, next) {
+    async getStreamerAbout(req, res, next) {
         try {
             const { username } = req.params;
             logger.info(`Start get streamer's about api with username ${username}`);
