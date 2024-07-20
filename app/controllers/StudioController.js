@@ -77,26 +77,6 @@ class StudioController {
 			return res.status(500).json({ message: error.message });
 		}
 	}
-	// async getNotification(req, res, next) {
-	// 	try {
-	// 		const userId = req.user.userId;
-	// 		logger.info(`Start get notification for ${userId}`);
-	// 		if (!userId) {
-	// 			return res.status(400).json({ message: "Please login" });
-	// 		}
-	// 		const notifications = await Notification.find({ user: userId })
-	// 			.sort({ createdAt: -1 })
-	// 			.limit(10)
-	// 			.populate('user', 'username fullname profilePicture')
-	// 			.exec();
-	// 		return res.status(200).json({
-	// 			notifications: notifications
-	// 		});
-	// 	} catch (error) {
-	// 		logger.error("Call get notification api error: " + error);
-	// 		return res.status(500).json({ message: error.message });
-	// 	}
-	// }
 	async getNotification(req, res, next) {
 		try {
 			const userId = req.user.userId;
@@ -121,7 +101,6 @@ class StudioController {
 					);
 				}
 			}
-			// console.log("TEST", notifications);
 			return res.status(200).json({
 				notifications: notifications
 			});
@@ -451,6 +430,7 @@ class StudioController {
 		try {
 			const { streamIds } = req.body;
 			const userId = req.user.userId;
+			logger.info(`Start delete saved streams api for ${userId}, streamIds ${streamIds}`);
 			const deleteHistoryResult = await History.deleteMany({ stream: { $in: streamIds } });
 			const deleteChatResult = await Chat.deleteMany({ stream: { $in: streamIds } });
 			const result = await Stream.deleteMany({ _id: { $in: streamIds }, user: userId });
@@ -463,7 +443,7 @@ class StudioController {
 				}
 			);
 		} catch (error) {
-			console.log(error);
+			logger.error("Call delete saved streams api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}

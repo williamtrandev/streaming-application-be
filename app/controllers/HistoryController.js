@@ -1,3 +1,4 @@
+import logger from "../common/logger.js";
 import History from "../models/History.js";
 import Stream from "../models/Stream.js";
 
@@ -6,6 +7,7 @@ class HistoryController {
         try {
             const { streamId } = req.body;
             const userId = req.user.userId;
+            logger.info(`Start write history api for ${userId}, streamId ${streamId}`);
             if (!streamId) {
                 return res.status(400).json({ message: 'Please enter streamId' });
             }
@@ -24,6 +26,7 @@ class HistoryController {
                 history: existingHistory
             });
         } catch (error) {
+            logger.error("Call write history api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -32,6 +35,7 @@ class HistoryController {
         try {
             const { streamId, liked } = req.body;
             const userId = req.user.userId;
+            logger.info(`Start like stream api for ${userId}, streamId ${streamId}`);
             if (!streamId) {
                 return res.status(400).json({ message: 'Please enter streamId' });
             }
@@ -76,6 +80,7 @@ class HistoryController {
                 addDislike
             });
         } catch (error) {
+            logger.error("Call like stream api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }

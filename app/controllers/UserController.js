@@ -13,6 +13,7 @@ class UserController {
         try {
             const userId = req.user.userId;
             const { profilePicture } = req.body;
+            logger.info(`Start change profile picture api for ${userId}, profilePicture ${profilePicture}`);
 
             const user = await User.findById(userId);
             if (!user) {
@@ -35,6 +36,7 @@ class UserController {
                 message: "Change profile picture successfully"
             });
         } catch (error) {
+            logger.error("Call change profile picture api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -43,6 +45,7 @@ class UserController {
         try {
             const userId = req.user.userId;
             const { profileBanner } = req.body;
+            logger.info(`Start change profile banner api for ${userId}, profileBanner ${profileBanner}`);
 
             const user = await User.findById(userId);
             if (!user) {
@@ -65,6 +68,7 @@ class UserController {
                 message: "Change profile banner successfully"
             });
         } catch (error) {
+            logger.error("Call change profile banner api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -73,6 +77,7 @@ class UserController {
         try {
             const userId = req.user.userId;
             const { fullname, about } = req.body;
+            logger.info(`Start change profile information api for ${userId}, body ${req.body}`);
             if (!fullname || !about) {
                 return res.status(400).json({ message: "Please enter new display name and new about" });
             }
@@ -91,6 +96,7 @@ class UserController {
                 message: "Change user's informations successfully"
             });
         } catch (error) {
+            logger.error("Call change profile information api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -98,6 +104,7 @@ class UserController {
     async getProfile(req, res) {
         try {
             const { userId } = req.params;
+            logger.info(`Start get profile api for ${userId}`);
             const user = await User.findById(userId);
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
@@ -116,6 +123,7 @@ class UserController {
                 canChangeUsername: today - user.lastChangeUsername >= fourteenDaysInMilliseconds
             });
         } catch (error) {
+            logger.error("Call get profile api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -123,6 +131,7 @@ class UserController {
     async getMiniProfile(req, res) {
         try {
             const { userId } = req.params;
+            logger.info(`Start get header profile for ${userId}`);
             const user = await User.findById(userId).lean();
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
@@ -139,6 +148,7 @@ class UserController {
                 fullname: user.fullname
             });
         } catch (error) {
+            logger.error("Call get header profile api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -147,6 +157,7 @@ class UserController {
         try {
             const userId = req.user.userId;
             const { links } = req.body;
+            logger.info(`Start change links api for ${userId}, links ${links}`);
             if (!links) {
                 return res.status(400).json({ message: "Please enter new social links" });
             }
@@ -161,6 +172,7 @@ class UserController {
                 message: "Change user's social links successfully"
             });
         } catch (error) {
+            logger.error("Call change links api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -168,6 +180,7 @@ class UserController {
     async getEmail(req, res) {
         try {
             const { userId } = req.params;
+            logger.info(`Start get email api for ${userId}`);
             const user = await User.findById(userId);
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
@@ -176,6 +189,7 @@ class UserController {
                 email: user.email
             });
         } catch (error) {
+            logger.error("Call get email api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -183,10 +197,11 @@ class UserController {
     async follow(req, res, next) {
         try {
             const { streamerId } = req.body;
+            const userId = req.user.userId;
+            logger.info(`Start follow api for ${userId}, streamerId ${streamerId}`);
             if (!streamerId) {
                 return res.status(400).json({ message: 'Please enter streamerId' });
             }
-            const userId = req.user.userId;
             const data = await Follower.create({
                 user: userId,
                 streamer: streamerId
@@ -214,15 +229,15 @@ class UserController {
                 }
             });
         } catch (error) {
+            logger.error("Call follow api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
 
     async getFollowedChannels(req, res, next) {
         try {
-            logger.info("Start api get follow channel");
             const userId = req.params.userId;
-            logger.info("Get follow channel with userId: " + userId);
+            logger.info(`Start get followed channels api for ${userId}`);
             const followers = await Follower.aggregate([
                 {
                     $match: {
@@ -266,7 +281,7 @@ class UserController {
             }
             return res.status(200).json({ followedChannels: followers });
         } catch (error) {
-            logger.error("Call api get followed channel error: ", error);
+            logger.error("Call get followed channel api error: ", error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -274,6 +289,7 @@ class UserController {
     async getStreamerProfile(req, res) {
         try {
             const { username } = req.params;
+            logger.info(`Start get streamer's profile api with username ${username}`);
             const user = await User.findOne({ username: username });
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
@@ -290,13 +306,15 @@ class UserController {
                 numFollowers: numFollowers
             });
         } catch (error) {
+            logger.error("Call get streamer's profile api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
 
-    async getStreamerABout(req, res) {
+    async getStreamerAbout(req, res) {
         try {
             const { username } = req.params;
+            logger.info(`Start get streamer's about api with username ${username}`);
             const user = await User.findOne({ username: username });
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
@@ -307,6 +325,7 @@ class UserController {
                 links: user.links
             });
         } catch (error) {
+            logger.error("Call get streamer's about api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -314,12 +333,14 @@ class UserController {
     async getFollow(req, res) {
         try {
             const { userId, streamerId } = req.params;
+            logger.info(`Start get follow information api for ${userId}, streamerId ${streamerId}`);
             const follow = await Follower.findOne({ user: userId, streamer: streamerId });
 
             return res.status(200).json({
                 follow
             });
         } catch (error) {
+            logger.error("Call get follow information api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
@@ -328,6 +349,7 @@ class UserController {
         try {
             const userId = req.user.userId;
             const { streamerId } = req.body;
+            logger.info(`Start toggle notification api for ${userId}, streamerId ${streamerId}`);
             const follow = await Follower.findOneAndUpdate(
                 { user: userId, streamer: streamerId },
                 [{ $set: { receiveNotification: { $not: "$receiveNotification" } } }],
@@ -338,17 +360,19 @@ class UserController {
                 receiveNotification: follow.receiveNotification
             });
         } catch (error) {
+            logger.error("Call toggle notification api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }
 
     async unfollow(req, res) {
         try {
+            const userId = req.user.userId;
             const { streamerId } = req.params;
+            logger.info(`Start unfollow api for ${userId}, streamerId ${streamerId}`);
             if (!streamerId) {
                 return res.status(400).json({ message: 'Please enter streamerId' });
             }
-            const userId = req.user.userId;
             const deletedFollow = await Follower.findOneAndDelete({
                 user: userId,
                 streamer: streamerId
@@ -360,6 +384,7 @@ class UserController {
                 message: "Unollowed successfully"
             });
         } catch (error) {
+            logger.error("Call unfollow api error: " + error);
             return res.status(500).json({ message: error.message });
         }
     }

@@ -120,6 +120,7 @@ class AuthController {
 	async forgotPassword(req, res, next) {
 		try {
 			const { email, username } = req.body;
+			logger.info(`Start forgot password api with username ${username}, email ${email}`);
 			if (!email || !username) {
 				return res.status(400).json({ message: "Please enter email and username" });
 			}
@@ -137,6 +138,7 @@ class AuthController {
 			sendMailToUser(user.email, subject, 'sendOTP', context);
 			return res.status(200).json({ message: "Please check your email to continue" });
 		} catch (error) {
+			logger.error("Call forgot password api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -144,6 +146,7 @@ class AuthController {
 	async resetPassword(req, res, next) {
 		try {
 			const { email, password, confirmPassword, otp } = req.body;
+			logger.info(`Start reset password api with body ${req.body}`);
 			if (!email || !password || !otp || !confirmPassword) {
 				return res.status(400).json({
 					message: 'Please enter email, password, confirm password, otp'
@@ -171,6 +174,7 @@ class AuthController {
 				return res.status(400).json({ message: "User not found" });
 			}
 		} catch (error) {
+			logger.error("Call reset password api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -178,6 +182,7 @@ class AuthController {
 	async checkUsernameAvailable(req, res) {
 		try {
 			const { username } = req.body;
+			logger.info(`Start check if username is available api with username ${username}`);
 			const existingUser = await User.findOne({ username: username });
 			if (existingUser) {
 				return res.status(200).json({ available: false });
@@ -185,6 +190,7 @@ class AuthController {
 				return res.status(200).json({ available: true });
 			}
 		} catch (error) {
+			logger.error("Call check if username is available api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -192,6 +198,7 @@ class AuthController {
 	async checkEmailAvailable(req, res) {
 		try {
 			const { email } = req.body;
+			logger.info(`Start check if email is available api with email ${email}`);
 			const existingUser = await User.findOne({ email: email });
 			if (existingUser) {
 				return res.status(200).json({ available: false });
@@ -199,6 +206,7 @@ class AuthController {
 				return res.status(200).json({ available: true });
 			}
 		} catch (error) {
+			logger.error("Call check if email is available api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -206,6 +214,7 @@ class AuthController {
 	async sendVerifyEmail(req, res) {
 		try {
 			const { email } = req.body;
+			logger.info(`Start send verify email api to ${email}`);
 			const otp = generateOTP();
 			await redisClient.getInstance().setEx(email, 300, otp);
 			const subject = '[Duo Streaming] OTP verification';
@@ -216,6 +225,7 @@ class AuthController {
 			sendMailToUser(email, subject, 'sendOTP', context);
 			return res.status(200).json({ message: "Please enter the OTP we send to your email to the form" });
 		} catch (error) {
+			logger.error("Call send verify email api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -223,7 +233,7 @@ class AuthController {
 	async register(req, res) {
 		try {
 			const { username, fullname, password, email, otp } = req.body;
-
+			logger.info(`Start register api with body ${req.body}`);
 			if (!username) {
 				return res.status(400).json({ message: "Required field 'username' is missing" });
 			}
@@ -300,6 +310,7 @@ class AuthController {
 				refreshToken: refreshToken
 			});
 		} catch (error) {
+			logger.error("Call register api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -308,6 +319,7 @@ class AuthController {
 		try {
 			const userId = req.user.userId;
 			const { oldPassword, newPassword } = req.body;
+			logger.info(`Start change password api for ${userId}`);
 			if (!oldPassword || !newPassword) {
 				return res.status(400).json({
 					message: "Please enter old password and new password"
@@ -327,6 +339,7 @@ class AuthController {
 				return res.status(400).json({ message: "Your current password was incorrect" });
 			}
 		} catch (error) {
+			logger.error("Call change password api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -335,6 +348,7 @@ class AuthController {
 		try {
 			const userId = req.user.userId;
 			const { username, password } = req.body;
+			logger.info(`Start change username api for ${userId}, new username ${username}`);
 			if (!username || !password) {
 				return res.status(400).json({
 					message: "Please enter password and new username"
@@ -363,6 +377,7 @@ class AuthController {
 				return res.status(400).json({ message: "Your password was incorrect" });
 			}
 		} catch (error) {
+			logger.error("Call change username api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -371,6 +386,7 @@ class AuthController {
 		try {
 			const userId = req.user.userId;
 			const { email, otp } = req.body;
+			logger.info(`Start change email api for ${userId}, new email ${email}`);
 			if (!email) {
 				return res.status(400).json({ message: "Please enter new email address" });
 			}
@@ -398,6 +414,7 @@ class AuthController {
 				message: "Change email address successfully"
 			});
 		} catch (error) {
+			logger.error("Call change email api error: " + error);
 			return res.status(500).json({ message: error.message });
 		}
 	}
@@ -405,6 +422,7 @@ class AuthController {
 	async forgotUsername(req, res) {
         try {
             const { email } = req.body;
+			logger.info(`Start forgot username api with email ${email}`);
 			if (!email) {
 				return res.status(400).json({ message: "Please enter your email address" });
 			}
@@ -420,6 +438,7 @@ class AuthController {
 			sendMailToUser(email, subject, 'forgotUsername', context);
 			return res.status(200).json({ message: "We have sent you an email containing your username. Please check your email." });
         } catch (error) {
+			logger.error("Call forgot username api error: " + error);
             return res.status(500).json({ error: error.message });
         }
     }
