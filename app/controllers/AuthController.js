@@ -12,7 +12,6 @@ class AuthController {
 	async login(req, res, next) {
 		try {
 			logger.info("Start login api");
-			console.log(a)
 			const { username, password } = req.body;
 			if (!username || !password) {
 				return res.status(400).json({ message: "Please enter username and password" });
