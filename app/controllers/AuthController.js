@@ -8,45 +8,11 @@ import { OTP } from '../constants/index.js';
 import logger from '../common/logger.js';
 
 class AuthController {
-	// async verifyOTP(req, res, next) {
-	// 	try {
-	// 		var { username, otp, typeOTP } = req.body;
-	// 		if (!username || !otp) {
-	// 			return res.status(400).json({
-	// 				message: "Please enter username and otp"
-	// 			});
-	// 		}
-	// 		if (!typeOTP) {
-	// 			typeOTP = OTP.RESET_PASS;
-	// 		}
-	// 		const cachedOTP = await redisClient.getInstance().get(username);
-	// 		if (!cachedOTP) {
-	// 			return res.status(400).json({ message: "OTP has expired" });
-	// 		}
-	// 		if (cachedOTP == otp) {
-	// 			if (typeOTP == OTP.LOGIN) {
-	// 				const updatedUser = await User.findOneAndUpdate(
-	// 					{ username: username },
-	// 					{ verified: true },
-	// 					{ new: true }
-	// 				);
-	// 				if (updatedUser) {
-	// 					return res.status(200).json({ message: "Verified" });
-	// 				} else {
-	// 					return res.status(400).json({ message: "User not found" });
-	// 				}
-	// 			}
-	// 			return res.status(200).json({ message: "Verified", typeOTP: typeOTP });
-	// 		}
-	// 		return res.status(500).json({ message: "OTP is not match" });
-	// 	} catch (error) {
-	// 		return res.status(500).json({ message: error.message });
-	// 	}
-	// }
 
 	async login(req, res, next) {
 		try {
 			logger.info("Start login api");
+			console.log(a)
 			const { username, password } = req.body;
 			if (!username || !password) {
 				return res.status(400).json({ message: "Please enter username and password" });
@@ -78,8 +44,7 @@ class AuthController {
 				return res.status(401).json({ message: "Incorrect username or password" });
 			}
 		} catch (error) {
-			logger.error("Call api login error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -112,8 +77,7 @@ class AuthController {
 				refreshToken: newRefreshToken
 			});
 		} catch (error) {
-			logger.error("Call api refresh token error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 	
@@ -137,7 +101,7 @@ class AuthController {
 			sendMailToUser(user.email, subject, 'sendOTP', context);
 			return res.status(200).json({ message: "Please check your email to continue" });
 		} catch (error) {
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -171,11 +135,11 @@ class AuthController {
 				return res.status(400).json({ message: "User not found" });
 			}
 		} catch (error) {
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
-	async checkUsernameAvailable(req, res) {
+	async checkUsernameAvailable(req, res, next) {
 		try {
 			const { username } = req.body;
 			const existingUser = await User.findOne({ username: username });
@@ -185,11 +149,11 @@ class AuthController {
 				return res.status(200).json({ available: true });
 			}
 		} catch (error) {
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
-	async checkEmailAvailable(req, res) {
+	async checkEmailAvailable(req, res, next) {
 		try {
 			const { email } = req.body;
 			const existingUser = await User.findOne({ email: email });
@@ -199,11 +163,11 @@ class AuthController {
 				return res.status(200).json({ available: true });
 			}
 		} catch (error) {
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
-	async sendVerifyEmail(req, res) {
+	async sendVerifyEmail(req, res, next) {
 		try {
 			const { email } = req.body;
 			const otp = generateOTP();
@@ -216,11 +180,11 @@ class AuthController {
 			sendMailToUser(email, subject, 'sendOTP', context);
 			return res.status(200).json({ message: "Please enter the OTP we send to your email to the form" });
 		} catch (error) {
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
-	async register(req, res) {
+	async register(req, res, next) {
 		try {
 			const { username, fullname, password, email, otp } = req.body;
 
@@ -300,11 +264,11 @@ class AuthController {
 				refreshToken: refreshToken
 			});
 		} catch (error) {
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
-	async changePassword(req, res) {
+	async changePassword(req, res, next) {
 		try {
 			const userId = req.user.userId;
 			const { oldPassword, newPassword } = req.body;
@@ -327,11 +291,11 @@ class AuthController {
 				return res.status(400).json({ message: "Your current password was incorrect" });
 			}
 		} catch (error) {
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
-	async changeUsername(req, res) {
+	async changeUsername(req, res, next) {
 		try {
 			const userId = req.user.userId;
 			const { username, password } = req.body;
@@ -363,11 +327,11 @@ class AuthController {
 				return res.status(400).json({ message: "Your password was incorrect" });
 			}
 		} catch (error) {
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
-	async changeEmail(req, res) {
+	async changeEmail(req, res, next) {
 		try {
 			const userId = req.user.userId;
 			const { email, otp } = req.body;
@@ -398,11 +362,11 @@ class AuthController {
 				message: "Change email address successfully"
 			});
 		} catch (error) {
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
-	async forgotUsername(req, res) {
+	async forgotUsername(req, res, next) {
         try {
             const { email } = req.body;
 			if (!email) {
@@ -420,7 +384,7 @@ class AuthController {
 			sendMailToUser(email, subject, 'forgotUsername', context);
 			return res.status(200).json({ message: "We have sent you an email containing your username. Please check your email." });
         } catch (error) {
-            return res.status(500).json({ error: error.message });
+			next(error);
         }
     }
 }

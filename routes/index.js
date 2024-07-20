@@ -6,6 +6,8 @@ import studioRouter from './studio.js';
 import searchRouter from './search.js';
 import streamRouter from './stream.js';
 import historyRouter from './history.js';
+import logger from '../app/common/logger.js';
+import sendMessageToTelegram from '../app/common/telegram.js';
 
 const route = (app) => {
 	const apiRouter = express.Router();
@@ -30,7 +32,8 @@ const route = (app) => {
 
 	// Middleware bắt lỗi 500
 	app.use((err, req, res, next) => {
-		console.error(err.stack);
+		logger.error(`Call api ${req.originalUrl} with error ${err.stack}`);
+		sendMessageToTelegram(`BE api [${req.originalUrl}] with error ${err.message}`);
 		res.status(500).json({
 			title: 'Lỗi',
 			content: '500 - Lỗi server',

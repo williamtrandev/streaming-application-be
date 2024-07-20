@@ -23,8 +23,7 @@ class ChatController {
 			}
 			return res.status(200).json({ msg: "Send message successfully" });
 		} catch (error) {
-			logger.error("Call api send message error: " + error);
-			return res.status(500).json({ error: error.message });
+			next(error);
 		}
 	}
 
@@ -63,8 +62,7 @@ class ChatController {
 				messages: updatedMessages
 			});
 		} catch (error) {
-			logger.error("Call api get all message error: " + error);
-			return res.status(500).json({ error: error.message });
+			next(error);
 		}
 	}
 }

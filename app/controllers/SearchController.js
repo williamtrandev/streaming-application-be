@@ -8,7 +8,7 @@ import { Types } from "mongoose";
 import { getObjectURL } from "../common/s3.js"
 
 class SearchController {
-    async searchChannels(req, res) {
+    async searchChannels(req, res, next) {
         try {
             const key = req.query.key;
             logger.info("Start search for channels api with key: " + key);
@@ -29,12 +29,11 @@ class SearchController {
             }
             return res.status(200).json({ channels: channels });
         } catch (error) {
-            logger.error("Call search for channels api error: " + error);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async searchStreams(req, res) {
+    async searchStreams(req, res, next) {
         try {
             const { key, page } = req.query;
             logger.info(`Start search streams api with key ${key} and page ${page}`);
@@ -74,12 +73,11 @@ class SearchController {
             }
             return res.status(200).json({ streams: streams });
         } catch (error) {
-            logger.error("Call search streams api error: " + error);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async searchHistory(req, res) {
+    async searchHistory(req, res, next) {
         try {
             const { userId } = req.params;
             const { key, page } = req.query;
@@ -166,12 +164,11 @@ class SearchController {
             }
             return res.status(200).json({ histories: searchedHistory });
         } catch (error) {
-            logger.error("Call search history api error: " + error);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async searchUsers(req, res) {
+    async searchUsers(req, res, next) {
         try {
             const { q, limit, exclude } = req.query;
             logger.info(`Start search users api with q: ${q}, limit: ${limit}, exclude: ${exclude}`);
@@ -215,12 +212,11 @@ class SearchController {
             });
             return res.status(200).json({ channels: sortedChannels });
         } catch (error) {
-            logger.error("Call search users api error: " + error);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async searchSavedStream(req, res) {
+    async searchSavedStream(req, res, next) {
         try {
             const userId = req.user.userId;
             const { key, page, date, numViews, numViewsLive } = req.query;
@@ -264,8 +260,7 @@ class SearchController {
                 numPages: numPages 
             });
         } catch (error) {
-            console.log(error)
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 }

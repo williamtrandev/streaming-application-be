@@ -8,7 +8,7 @@ import User from "../models/User.js";
 import { Types } from "mongoose";
 
 class StreamController {
-    async getSavedStreams(req, res) {
+    async getSavedStreams(req, res, next) {
         try {
             const { username, page } = req.params;
             logger.info(`Start get saved stream api with username ${username}, page ${page}`);
@@ -27,12 +27,11 @@ class StreamController {
             }
             return res.status(200).json({ streams });
         } catch (error) {
-            logger.error("Call get saved streams api error: " + error);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async getStreamerHomeStreams(req, res) {
+    async getStreamerHomeStreams(req, res, next) {
         try {
             const { username } = req.params;
             logger.info("Start get streamer home api with username " + username);
@@ -64,12 +63,11 @@ class StreamController {
                 currentStream
             });
         } catch (error) {
-            logger.error("Call get streamer home api error: " + error);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async getLikedStreams(req, res) {
+    async getLikedStreams(req, res, next) {
         try {
             const { userId, page } = req.params;
             logger.info(`Start get liked streams api with userId ${userId}, page ${page}`);
@@ -153,12 +151,11 @@ class StreamController {
                 histories
             });
         } catch (error) {
-            logger.error("Call get liked streams api error: " + error);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async getFollowingStreams(req, res) {
+    async getFollowingStreams(req, res, next) {
         try {
             const { userId, page } = req.params;
             logger.info(`Start get following streams with userId ${userId}, page ${page}`);
@@ -194,12 +191,11 @@ class StreamController {
                 streams
             });
         } catch (error) {
-            logger.error("Call get following streams api error: " + error);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async getNumLikesAndDislikes(req, res) {
+    async getNumLikesAndDislikes(req, res, next) {
         try {
             const { streamId } = req.params;
             const stream = await Stream.findById(streamId);
@@ -211,12 +207,11 @@ class StreamController {
                 numDislikes: stream.numDislikes
             });
         } catch (error) {
-            logger.error("Call get lives and dislikes api error: " + error);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async getHomeStreams(req, res) {
+    async getHomeStreams(req, res, next) {
         try {
             const randomStreams = await Stream.aggregate([
                 { $match: { started: true, finished: false } },
@@ -361,8 +356,7 @@ class StreamController {
                 recommendStreams
             });
         } catch (error) {
-            logger.error("Call get home streams api error: " + error);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 }

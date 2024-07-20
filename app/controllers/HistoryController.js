@@ -2,7 +2,7 @@ import History from "../models/History.js";
 import Stream from "../models/Stream.js";
 
 class HistoryController {
-    async writeHistory(req, res) {
+    async writeHistory(req, res, next) {
         try {
             const { streamId } = req.body;
             const userId = req.user.userId;
@@ -24,11 +24,11 @@ class HistoryController {
                 history: existingHistory
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async likeStream(req, res) {
+    async likeStream(req, res, next) {
         try {
             const { streamId, liked } = req.body;
             const userId = req.user.userId;
@@ -76,7 +76,7 @@ class HistoryController {
                 addDislike
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 }

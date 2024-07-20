@@ -14,7 +14,7 @@ import StatsViewer from "../models/StatsViewer.js";
 
 
 class StudioController {
-	async saveStream(req, res) {
+	async saveStream(req, res, next) {
 		try {
 			const { userId, title, description, dateStream, tags, previewImage, rerun } = req.body;
 			logger.info(`Start save stream api with body ${req.body}`);
@@ -45,8 +45,7 @@ class StudioController {
 				stream: updatedData
 			});
 		} catch (error) {
-			logger.error("Call save stream api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 	async saveNotification(req, res, next) {
@@ -73,30 +72,9 @@ class StudioController {
 				message: "Create notifications successfully"
 			});
 		} catch (error) {
-			logger.error("Call save notification api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
-	// async getNotification(req, res, next) {
-	// 	try {
-	// 		const userId = req.user.userId;
-	// 		logger.info(`Start get notification for ${userId}`);
-	// 		if (!userId) {
-	// 			return res.status(400).json({ message: "Please login" });
-	// 		}
-	// 		const notifications = await Notification.find({ user: userId })
-	// 			.sort({ createdAt: -1 })
-	// 			.limit(10)
-	// 			.populate('user', 'username fullname profilePicture')
-	// 			.exec();
-	// 		return res.status(200).json({
-	// 			notifications: notifications
-	// 		});
-	// 	} catch (error) {
-	// 		logger.error("Call get notification api error: " + error);
-	// 		return res.status(500).json({ message: error.message });
-	// 	}
-	// }
 	async getNotification(req, res, next) {
 		try {
 			const userId = req.user.userId;
@@ -126,8 +104,7 @@ class StudioController {
 				notifications: notifications
 			});
 		} catch (error) {
-			logger.error("Call get notification api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -159,8 +136,7 @@ class StudioController {
 				}
 			})
 		} catch (error) {
-			console.log(error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -179,8 +155,7 @@ class StudioController {
 				data: comingStreams
 			})
 		} catch (error) {
-			logger.error("Call get all coming streams api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -224,8 +199,7 @@ class StudioController {
 				stream: updatedData
 			});
 		} catch (error) {
-			logger.error("Call edit stream api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -239,8 +213,7 @@ class StudioController {
 			}
 			res.status(204).json({ message: 'Stream deleted successfully' });
 		} catch (error) {
-			logger.error("Call delete stream api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -265,8 +238,7 @@ class StudioController {
 			);
 			return res.status(200).json({ data: mods });
 		} catch (error) {
-			logger.error("Call get all mods api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -302,8 +274,7 @@ class StudioController {
 				user: updatedUser
 			});
 		} catch (error) {
-			logger.error("Call add mods api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -334,8 +305,7 @@ class StudioController {
 				user: updatedUser
 			});
 		} catch (error) {
-			logger.error("Call delete mods api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -357,8 +327,7 @@ class StudioController {
 				egressId
 			});
 		} catch (error) {
-			logger.error("Call start stream api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -378,17 +347,10 @@ class StudioController {
 				stream
 			});
 		} catch (error) {
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
-	// async statsNewFollowerAndSubs(req, res, next) {
-	// 	try {
-	// 		const latestStream = await Stream.
-	// 	} catch (error) {
-	// 		return res.status(500).json({ message: error.message });
-	// 	}
-	// }
-	async getServerUrlAndStreamKey(req, res) {
+	async getServerUrlAndStreamKey(req, res, next) {
 		try {
 			const { username, streamId } = req.params;
 			logger.info(`Start get server url and stream key username ${username}, streamId ${streamId}`);
@@ -399,12 +361,11 @@ class StudioController {
 				streamKey: ingress.streamKey
 			});
 		} catch (error) {
-			logger.error("Call get server url and stream key api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
-	async getStreamerToken(req, res) {
+	async getStreamerToken(req, res, next) {
 		try {
 			const { streamId } = req.body;
 			logger.info(`Start get stream token with streamId ${streamId}`);
@@ -413,12 +374,11 @@ class StudioController {
 				token
 			});
 		} catch (error) {
-			logger.error("Call get stream token api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
-	async getViewerToken(req, res) {
+	async getViewerToken(req, res, next) {
 		try {
 			const { streamId, userId } = req.body;
 			logger.info(`Start get viewer token with streamId ${streamId}, userId ${userId}`);
@@ -428,8 +388,7 @@ class StudioController {
 				token
 			});
 		} catch (error) {
-			logger.error("Call get viewer token api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -442,12 +401,11 @@ class StudioController {
                 streamLink
             });
 		} catch(error) {
-			logger.error("Call get video record api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
-	async deleteSavedStreams(req, res) {
+	async deleteSavedStreams(req, res, next) {
 		try {
 			const { streamIds } = req.body;
 			const userId = req.user.userId;
@@ -463,8 +421,7 @@ class StudioController {
 				}
 			);
 		} catch (error) {
-			console.log(error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -553,8 +510,7 @@ class StudioController {
 			}
 			return res.status(200).json({ datasets });
 		} catch (error) {
-			logger.error("Call to get stats api error: " + error);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -569,8 +525,7 @@ class StudioController {
 			});
 			return res.status(200).json({ banned });
 		} catch (error) {
-			logger.error(`Call ban viewer api error: ${error}`);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -585,8 +540,7 @@ class StudioController {
 			});
 			return res.status(200).json({ banned });
 		} catch (error) {
-			logger.error(`Call unban viewer api error: ${error}`);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 
@@ -607,8 +561,7 @@ class StudioController {
 			const numViewersPerMin = statsViewer.numViewersPerMin;
 			return res.status(200).json({ numViewersPerMin });
 		} catch (error) {
-			logger.error(`Call get stats viewer api error: ${error}`);
-			return res.status(500).json({ message: error.message });
+			next(error);
 		}
 	}
 }

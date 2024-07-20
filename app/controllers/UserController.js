@@ -9,7 +9,7 @@ import Stream from "../models/Stream.js";
 import Banned from "../models/Banned.js";
 
 class UserController {
-    async changeProfilePicture(req, res) {
+    async changeProfilePicture(req, res, next) {
         try {
             const userId = req.user.userId;
             const { profilePicture } = req.body;
@@ -35,11 +35,11 @@ class UserController {
                 message: "Change profile picture successfully"
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async changeProfileBanner(req, res) {
+    async changeProfileBanner(req, res, next) {
         try {
             const userId = req.user.userId;
             const { profileBanner } = req.body;
@@ -65,11 +65,11 @@ class UserController {
                 message: "Change profile banner successfully"
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async changeProfileInfo(req, res) {
+    async changeProfileInfo(req, res, next) {
         try {
             const userId = req.user.userId;
             const { fullname, about } = req.body;
@@ -91,11 +91,11 @@ class UserController {
                 message: "Change user's informations successfully"
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async getProfile(req, res) {
+    async getProfile(req, res, next) {
         try {
             const { userId } = req.params;
             const user = await User.findById(userId);
@@ -116,11 +116,11 @@ class UserController {
                 canChangeUsername: today - user.lastChangeUsername >= fourteenDaysInMilliseconds
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async getMiniProfile(req, res) {
+    async getMiniProfile(req, res, next) {
         try {
             const { userId } = req.params;
             const user = await User.findById(userId).lean();
@@ -139,11 +139,11 @@ class UserController {
                 fullname: user.fullname
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async changeLinks(req, res) {
+    async changeLinks(req, res, next) {
         try {
             const userId = req.user.userId;
             const { links } = req.body;
@@ -161,11 +161,11 @@ class UserController {
                 message: "Change user's social links successfully"
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async getEmail(req, res) {
+    async getEmail(req, res, next) {
         try {
             const { userId } = req.params;
             const user = await User.findById(userId);
@@ -176,7 +176,7 @@ class UserController {
                 email: user.email
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
@@ -214,7 +214,7 @@ class UserController {
                 }
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
@@ -266,12 +266,11 @@ class UserController {
             }
             return res.status(200).json({ followedChannels: followers });
         } catch (error) {
-            logger.error("Call api get followed channel error: ", error);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async getStreamerProfile(req, res) {
+    async getStreamerProfile(req, res, next) {
         try {
             const { username } = req.params;
             const user = await User.findOne({ username: username });
@@ -290,11 +289,11 @@ class UserController {
                 numFollowers: numFollowers
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async getStreamerABout(req, res) {
+    async getStreamerABout(req, res, next) {
         try {
             const { username } = req.params;
             const user = await User.findOne({ username: username });
@@ -307,11 +306,11 @@ class UserController {
                 links: user.links
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async getFollow(req, res) {
+    async getFollow(req, res, next) {
         try {
             const { userId, streamerId } = req.params;
             const follow = await Follower.findOne({ user: userId, streamer: streamerId });
@@ -320,11 +319,11 @@ class UserController {
                 follow
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async toggleNotification(req, res) {
+    async toggleNotification(req, res, next) {
         try {
             const userId = req.user.userId;
             const { streamerId } = req.body;
@@ -338,11 +337,11 @@ class UserController {
                 receiveNotification: follow.receiveNotification
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
-    async unfollow(req, res) {
+    async unfollow(req, res, next) {
         try {
             const { streamerId } = req.params;
             if (!streamerId) {
@@ -360,7 +359,7 @@ class UserController {
                 message: "Unollowed successfully"
             });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
@@ -373,8 +372,7 @@ class UserController {
             const userIsMod = streamer.mods.some(mod => mod.user.toString() === userId);
             return res.status(200).json({ userIsMod })
         } catch (error) {
-            logger.error(`Call check is mod api error: ${error.message}`);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
@@ -388,8 +386,7 @@ class UserController {
             const isBanned = count > 0;
             return res.status(200).json({ isBanned });
         } catch (error) {
-            logger.error(`Call check is banned api error: ${error.message}`);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
@@ -406,8 +403,7 @@ class UserController {
 
             return res.status(200).json({ permissions });
         } catch (error) {
-            logger.error(`Call check banned permission api error: ${error.message}`);
-            return res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 
