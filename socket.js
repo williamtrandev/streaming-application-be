@@ -10,7 +10,7 @@ import StatsViewer from "./app/models/StatsViewer.js";
 const willSocket = (server) => {
 	const io = new Server(server, {
 		cors: {
-			origin: process.env.ORIGIN,
+			origin: process.env.FE_ORIGIN,
 			credentials: true
 		}
 	});
@@ -191,7 +191,6 @@ const willSocket = (server) => {
 
 	setInterval(async () => {
 		const timestamp = new Date();
-		logger.info(`Start saving number of viewers at ${timestamp}`);
 		const today = new Date();
 		today.setHours(0, 0, 0, 0); 
 		const tomorrow = new Date(today);

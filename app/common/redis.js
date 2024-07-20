@@ -5,14 +5,13 @@ dotenv.config();
 class RedisClient {
     constructor() {
         if (!RedisClient.instance) {
-            // this.client = createClient({
-            //     password: process.env.REDIS_PASSWORD,
-            //     socket: {
-            //         host: process.env.REDIS_HOST,
-            //         port: 14563
-            //     }
-            // });
-            this.client = createClient();
+            this.client = createClient({
+                password: process.env.REDIS_PASSWORD,
+                socket: {
+                    host: process.env.REDIS_HOST,
+                    port: process.env.REDIS_PORT
+                }
+            });
             this.client.on('error', (err) => console.log('Redis Client Error', err));
 
             (async () => {
