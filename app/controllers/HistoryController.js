@@ -1,3 +1,4 @@
+import logger from "../common/logger.js";
 import History from "../models/History.js";
 import Stream from "../models/Stream.js";
 
@@ -6,6 +7,7 @@ class HistoryController {
         try {
             const { streamId } = req.body;
             const userId = req.user.userId;
+            logger.info(`Start write history api for ${userId}, streamId ${streamId}`);
             if (!streamId) {
                 return res.status(400).json({ message: 'Please enter streamId' });
             }
@@ -32,6 +34,7 @@ class HistoryController {
         try {
             const { streamId, liked } = req.body;
             const userId = req.user.userId;
+            logger.info(`Start like stream api for ${userId}, streamId ${streamId}`);
             if (!streamId) {
                 return res.status(400).json({ message: 'Please enter streamId' });
             }

@@ -220,6 +220,7 @@ class SearchController {
         try {
             const userId = req.user.userId;
             const { key, page, date, numViews, numViewsLive } = req.query;
+            logger.info(`Start search saved stream api for ${userId}, query ${req.query}`);
             const sorter = {
                 dateStream: parseInt(date),
                 numViews: parseInt(numViews),
@@ -254,7 +255,6 @@ class SearchController {
                 ]
             });
             const numPages = Math.ceil(totalStreams / FETCH_LIMIT);
-            console.log(totalStreams, FETCH_LIMIT);
             return res.status(200).json({ 
                 streams: streams, 
                 numPages: numPages 

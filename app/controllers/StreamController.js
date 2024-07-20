@@ -252,7 +252,6 @@ class StreamController {
             let followingStreams = [];
             let recommendStreams = [];
             const userId = req.query.userId;
-            console.log(userId);
             if (userId) {
                 const followedStreamers = await Follower.find({ user: userId }).select('streamer');
                 const streamerIds = followedStreamers.map(follow => follow.streamer);

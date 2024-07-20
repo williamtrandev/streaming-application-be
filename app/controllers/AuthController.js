@@ -84,6 +84,7 @@ class AuthController {
 	async forgotPassword(req, res, next) {
 		try {
 			const { email, username } = req.body;
+			logger.info(`Start forgot password api with username ${username}, email ${email}`);
 			if (!email || !username) {
 				return res.status(400).json({ message: "Please enter email and username" });
 			}
@@ -108,6 +109,7 @@ class AuthController {
 	async resetPassword(req, res, next) {
 		try {
 			const { email, password, confirmPassword, otp } = req.body;
+			logger.info(`Start reset password api with body ${req.body}`);
 			if (!email || !password || !otp || !confirmPassword) {
 				return res.status(400).json({
 					message: 'Please enter email, password, confirm password, otp'
@@ -142,6 +144,7 @@ class AuthController {
 	async checkUsernameAvailable(req, res, next) {
 		try {
 			const { username } = req.body;
+			logger.info(`Start check if username is available api with username ${username}`);
 			const existingUser = await User.findOne({ username: username });
 			if (existingUser) {
 				return res.status(200).json({ available: false });
@@ -156,6 +159,7 @@ class AuthController {
 	async checkEmailAvailable(req, res, next) {
 		try {
 			const { email } = req.body;
+			logger.info(`Start check if email is available api with email ${email}`);
 			const existingUser = await User.findOne({ email: email });
 			if (existingUser) {
 				return res.status(200).json({ available: false });
@@ -170,6 +174,7 @@ class AuthController {
 	async sendVerifyEmail(req, res, next) {
 		try {
 			const { email } = req.body;
+			logger.info(`Start send verify email api to ${email}`);
 			const otp = generateOTP();
 			await redisClient.getInstance().setEx(email, 300, otp);
 			const subject = '[Duo Streaming] OTP verification';
@@ -187,7 +192,7 @@ class AuthController {
 	async register(req, res, next) {
 		try {
 			const { username, fullname, password, email, otp } = req.body;
-
+			logger.info(`Start register api with body ${req.body}`);
 			if (!username) {
 				return res.status(400).json({ message: "Required field 'username' is missing" });
 			}
@@ -272,6 +277,7 @@ class AuthController {
 		try {
 			const userId = req.user.userId;
 			const { oldPassword, newPassword } = req.body;
+			logger.info(`Start change password api for ${userId}`);
 			if (!oldPassword || !newPassword) {
 				return res.status(400).json({
 					message: "Please enter old password and new password"
@@ -299,6 +305,7 @@ class AuthController {
 		try {
 			const userId = req.user.userId;
 			const { username, password } = req.body;
+			logger.info(`Start change username api for ${userId}, new username ${username}`);
 			if (!username || !password) {
 				return res.status(400).json({
 					message: "Please enter password and new username"
@@ -335,6 +342,7 @@ class AuthController {
 		try {
 			const userId = req.user.userId;
 			const { email, otp } = req.body;
+			logger.info(`Start change email api for ${userId}, new email ${email}`);
 			if (!email) {
 				return res.status(400).json({ message: "Please enter new email address" });
 			}
@@ -369,6 +377,7 @@ class AuthController {
 	async forgotUsername(req, res, next) {
         try {
             const { email } = req.body;
+			logger.info(`Start forgot username api with email ${email}`);
 			if (!email) {
 				return res.status(400).json({ message: "Please enter your email address" });
 			}

@@ -99,7 +99,6 @@ class StudioController {
 					);
 				}
 			}
-			// console.log("TEST", notifications);
 			return res.status(200).json({
 				notifications: notifications
 			});
@@ -409,6 +408,7 @@ class StudioController {
 		try {
 			const { streamIds } = req.body;
 			const userId = req.user.userId;
+			logger.info(`Start delete saved streams api for ${userId}, streamIds ${streamIds}`);
 			const deleteHistoryResult = await History.deleteMany({ stream: { $in: streamIds } });
 			const deleteChatResult = await Chat.deleteMany({ stream: { $in: streamIds } });
 			const result = await Stream.deleteMany({ _id: { $in: streamIds }, user: userId });
