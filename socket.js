@@ -191,7 +191,6 @@ const willSocket = (server) => {
 
 	setInterval(async () => {
 		const timestamp = new Date();
-		logger.info(`Start saving number of viewers at ${timestamp}`);
 		const today = new Date();
 		today.setHours(0, 0, 0, 0); 
 		const tomorrow = new Date(today);
