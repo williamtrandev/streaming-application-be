@@ -412,7 +412,6 @@ class UserController {
             const bannedTypes = new Set(banneds.map(ban => ban.typeBanned));
 
             permissions = permissions.filter(permission => !bannedTypes.has(permission));
-
             return res.status(200).json({ permissions });
         } catch (error) {
             next(error);
