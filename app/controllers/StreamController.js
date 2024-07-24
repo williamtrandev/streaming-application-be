@@ -56,7 +56,10 @@ class StreamController {
                     path: "user",
                     select: "username fullname"
                 }).lean();
-            currentStream.previewImage = await getObjectURL(currentStream.s3.key, currentStream.s3.contentType);
+            if (currentStream) {
+                currentStream.previewImage = await getObjectURL(currentStream.s3.key, currentStream.s3.contentType);
+            }
+            
             return res.status(200).json({
                 mostViewedStreams,
                 mostLikedStreams,
@@ -198,13 +201,28 @@ class StreamController {
     async getNumLikesAndDislikes(req, res, next) {
         try {
             const { streamId } = req.params;
+            logger.info(`Start get number of likes, dislikes and views of stream ${streamId}`);
             const stream = await Stream.findById(streamId);
             if (!stream) {
                 return res.status(404).json({ message: "Stream not found" });
             }
             return res.status(200).json({
                 numLikes: stream.numLikes,
-                numDislikes: stream.numDislikes
+                numDislikes: stream.numDislikes,
+                numViews: stream.numViews
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async riseNumViews(req, res, next) {
+        try {
+            const { streamId } = req.body;
+            logger.info(`Start rise number of views of stream ${streamId}`);
+            await Stream.findByIdAndUpdate(streamId, { $inc: { numViews: 1 } });
+            return res.status(200).json({
+                message: `Rise number of views of stream ${streamId} successfully`
             });
         } catch (error) {
             next(error);

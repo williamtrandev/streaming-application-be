@@ -10,6 +10,7 @@ router.get("/saved/:username/:page", streamController.getSavedStreams);
 router.get("/home/:username", streamController.getStreamerHomeStreams);
 router.get("/following/:userId/:page", streamController.getFollowingStreams);
 router.get("/likes-dislikes/:streamId", streamController.getNumLikesAndDislikes);
+router.put("/views", streamController.riseNumViews);
 router.get("/home", streamController.getHomeStreams);
 
 export default router;
