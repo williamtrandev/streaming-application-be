@@ -6,6 +6,7 @@ import History from "../models/History.js";
 import Stream from "../models/Stream.js";
 import User from "../models/User.js";
 import { Types } from "mongoose";
+import redisClient from '../common/redis.js';
 
 class StreamController {
     async getSavedStreams(req, res, next) {
@@ -39,6 +40,13 @@ class StreamController {
             if (!user) {
                 return res.status(404).json({ message: 'User not found' });
             }
+            const cacheKey = `home-streamer-${username}`;
+            const cachedData = await redisClient.getInstance().get(cacheKey);
+            if (cachedData) {
+                const data = JSON.parse(cachedData);
+                return res.status(200).json(data);
+            }
+            logger.info(`Miss cache with key: ${cacheKey}`);
             const mostViewedStreams = await Stream.find({ user: user._id, finished: true, rerun: true })
                 .sort({ numViews: -1 }).limit(20).lean();
             for (const stream of mostViewedStreams) {
@@ -59,12 +67,14 @@ class StreamController {
             if (currentStream) {
                 currentStream.previewImage = await getObjectURL(currentStream.s3.key, currentStream.s3.contentType);
             }
-            
-            return res.status(200).json({
+            let cachedStreams = {
                 mostViewedStreams,
                 mostLikedStreams,
                 currentStream
-            });
+            };
+            await redisClient.getInstance().setEx(cacheKey, 60, JSON.stringify(cachedStreams));
+            logger.info(`Set cache key ${cacheKey}`);
+            return res.status(200).json(cachedStreams);
         } catch (error) {
             next(error);
         }
@@ -271,6 +281,14 @@ class StreamController {
             let recommendStreams = [];
             const userId = req.query.userId;
             if (userId) {
+                logger.info(`Get home stream with userId: ${userId}`);
+                const cacheKey = `home-stream-${userId}`;
+                const cachedData = await redisClient.getInstance().get(cacheKey);
+                if (cachedData) {
+                    const data = JSON.parse(cachedData);
+                    return res.status(200).json(data);
+                }
+                logger.info(`Miss cache with key: ${cacheKey}`);
                 const followedStreamers = await Follower.find({ user: userId }).select('streamer');
                 const streamerIds = followedStreamers.map(follow => follow.streamer);
                 followingStreams = await Stream.find({ 
@@ -365,6 +383,14 @@ class StreamController {
                         stream.duration = stream.finishAt - stream.startAt;
                     }
                 }
+
+                let cachedStreams = {
+                    randomStreams,
+                    followingStreams,
+                    recommendStreams
+                };
+                await redisClient.getInstance().setEx(cacheKey, 30, JSON.stringify(cachedStreams));
+                logger.info(`Set cache key ${cacheKey}`);
             }
 
             return res.status(200).json({
