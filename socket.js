@@ -120,7 +120,6 @@ const willSocket = (server) => {
 
 		socket.on("banned", (bannedId, streamId) => {
 			logger.info(`Start socket banned event with bannedId: ${bannedId}, streamId: ${streamId}`);
-			console.log(rooms)
 			const stream = rooms[streamId];
 			const bannedSocketId = userToSocketMap.get(bannedId);
 			logger.info(`Socket event banned with stream ${stream} and banned socket id ${bannedSocketId}`);
@@ -233,6 +232,5 @@ const willSocket = (server) => {
 		}
 	}, 30000);
 };
-
 
 export default willSocket;

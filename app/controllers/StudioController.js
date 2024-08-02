@@ -11,6 +11,7 @@ import Chat from "../models/Chat.js";
 import logger from "../common/logger.js";
 import Banned from "../models/Banned.js";
 import StatsViewer from "../models/StatsViewer.js";
+import redisClient from '../common/redis.js';
 
 
 class StudioController {
@@ -146,10 +147,19 @@ class StudioController {
 			if (!userId) {
 				return res.status(403).json({ message: 'Access denied' });
 			}
+			const cacheKey = `all-coming-stream-${userId}`;
+			const cachedData = await redisClient.getInstance().get(cacheKey);
+			if (cachedData) {
+				const data = JSON.parse(cachedData);
+				return res.status(200).json({ data: data });
+			}
+			logger.info(`Miss cache with key: ${cacheKey}`);
 			const comingStreams = await Stream.find({
 				user: userId,
 				started: false
 			}).lean();
+			await redisClient.getInstance().setEx(cacheKey, 60 * 60 * 24, JSON.stringify(comingStreams));
+			logger.info(`Set cache key ${cacheKey}`);
 			return res.status(200).json({
 				data: comingStreams
 			})
@@ -193,6 +203,10 @@ class StudioController {
 				return res.status(500).json({ message: "Failed to update stream" });
 			}
 
+			const cacheKey = `all-coming-stream-${currentStream._id.toString()}`;
+			await redisClient.getInstance().del(cacheKey);
+			logger.info(`Clear cache with key: ${cacheKey}`);
+
 			return res.status(200).json({
 				message: "Update stream successfully",
 				stream: updatedData
@@ -210,6 +224,9 @@ class StudioController {
 			if (!deletedStream) {
 				return res.status(404).json({ message: 'Stream not found' });
 			}
+			const cacheKey = `all-coming-stream-${deletedStream._id.toString()}`;
+			await redisClient.getInstance().del(cacheKey);
+			logger.info(`Clear cache with key: ${cacheKey}`);
 			res.status(204).json({ message: 'Stream deleted successfully' });
 		} catch (error) {
 			next(error);
@@ -223,6 +240,13 @@ class StudioController {
 			if (!userId) {
 				return res.status(403).json({ message: 'Forbidden access denied' });
 			}
+			const cacheKey = `all-mods-${userId}`;
+			const cachedData = await redisClient.getInstance().get(cacheKey);
+			if (cachedData) {
+				const data = JSON.parse(cachedData);
+				return res.status(200).json({ data: data });
+			}
+			logger.info(`Miss cache with key: ${cacheKey}`);
 			const user = await User.findById(userId).populate('mods.user', 'username fullname profilePictureS3');
 			if (!user) {
 				return res.status(400).json({ message: 'User not found' });
@@ -235,6 +259,8 @@ class StudioController {
 					return { ...mod.toObject(), ...mod.user.toObject(), profilePictureS3 };
 				})
 			);
+			await redisClient.getInstance().setEx(cacheKey, 60 * 60 * 24, JSON.stringify(mods));
+			logger.info(`Set cache key ${cacheKey}`);
 			return res.status(200).json({ data: mods });
 		} catch (error) {
 			next(error);
@@ -267,7 +293,9 @@ class StudioController {
 			if (!updatedUser) {
 				return res.status(500).json({ message: "Failed to add mod" });
 			}
-
+			const cacheKey = `all-mods-${userId}`;
+			await redisClient.getInstance().del(cacheKey);
+			logger.info(`Clear cache with key: ${cacheKey}`);
 			return res.status(200).json({
 				message: "Add mod successfully",
 				user: updatedUser
@@ -298,7 +326,9 @@ class StudioController {
 			if (!updatedUser) {
 				return res.status(500).json({ message: "Failed to delete mod" });
 			}
-
+			const cacheKey = `all-mods-${userId}`;
+			await redisClient.getInstance().del(cacheKey);
+			logger.info(`Clear cache with key: ${cacheKey}`);
 			return res.status(200).json({
 				message: "Delete mod successfully",
 				user: updatedUser

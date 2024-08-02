@@ -22,6 +22,13 @@ const route = (app) => {
 
 	app.use('/api/v1/', apiRouter);
 
+	app.get('/healthcheck', (req, res) => {
+		res.status(200).json({
+			status: 'OK',
+			message: 'Server is running'
+		});
+	});
+	
 	app.use((req, res, next) => {
 		res.status(404).json({
 			title: 'Trang không tìm thấy',

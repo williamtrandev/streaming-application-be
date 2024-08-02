@@ -17,7 +17,6 @@ const corsOptions = {
 	methods: ['GET', 'POST', 'PUT', 'DELETE'],
 	allowedHeaders: ['Content-Type', 'Authorization'],
 };
-console.log(corsOptions);
 app.use(cors(corsOptions));
 app.use(morgan('dev'));
 // app.use(express.static(path.join(__dirname, "public")));
