@@ -57,7 +57,11 @@ const UserSchema = new Schema({
 		type: Date,
 		default: Date.now()
 	},
-	mods: [ModSchema]
+	mods: [ModSchema],
+	numBans: {
+		type: Number,
+		default: 0
+	}
 }, { timestamps: true });
 
 const User = mongoose.model('User', UserSchema);

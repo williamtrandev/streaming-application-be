@@ -6,6 +6,7 @@ import studioRouter from './studio.js';
 import searchRouter from './search.js';
 import streamRouter from './stream.js';
 import historyRouter from './history.js';
+import adminRouter from './admin.js';
 import logger from '../app/common/logger.js';
 import sendMessageToTelegram from '../app/common/telegram.js';
 
@@ -19,6 +20,7 @@ const route = (app) => {
 	apiRouter.use('/search/', searchRouter);
 	apiRouter.use('/stream/', streamRouter);
 	apiRouter.use('/history/', historyRouter);
+	apiRouter.use('/admin/', adminRouter);
 
 	app.use('/api/v1/', apiRouter);
 
