@@ -37,7 +37,10 @@ class AdminController {
 	async getStreamer(req, res, next) {
 		try {
 			const { page } = req.params;
-			const { q, limit } = req.query;
+			let { q, limit } = req.query;
+			if (!limit) {
+				limit = 10;
+			}
 			logger.info(`Start get streamer api with page: ${page}, limit: ${limit}, q: ${q}`);
 			const userIds = await Stream.distinct('user');
 			const skip = (page - 1) * limit; 
@@ -48,10 +51,21 @@ class AdminController {
 					{ fullname: { $regex: new RegExp(q, 'i') } }
 				]
 			} : {};
-			const streamers = await User.find({ _id: { $in: userIds }, ...searchQuery })
+			var streamers = await User.find({ _id: { $in: userIds }, ...searchQuery })
 				.skip(skip)
 				.limit(limit);
-			return res.status(200).json(streamers);
+			const totalStreamers = await User.countDocuments({ _id: { $in: userIds }, ...searchQuery });
+			const numPages = Math.ceil(totalStreamers / limit);
+			streamers = await Promise.all(
+				streamers.map(async (streamer) => {
+					const profilePictureS3 = await getObjectURL(streamer.profilePictureS3.key, streamer.profilePictureS3.contentType);
+					return { ...streamer.toObject(), profilePictureS3 };
+				})
+			);
+			return res.status(200).json({
+				streamers,
+				numPages
+			});
 		} catch (error) {
 			next(error);
 		}
