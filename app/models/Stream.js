@@ -64,6 +64,10 @@ const StreamSchema = new Schema({
 	finishAt: {
 		type: Date,
 		default: null
+	},
+	isBanned: {
+		type: Boolean,
+		default: false
 	}
 }, { timestamps: true });
 
