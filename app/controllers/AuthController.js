@@ -6,6 +6,7 @@ import { sendMailToUser } from "../common/mail.js";
 import { generateOTP, containsWhitespace, containsSpecialCharacter, isValidEmail } from '../common/utils.js';
 import { OTP } from '../constants/index.js';
 import logger from '../common/logger.js';
+import Admin from '../models/Admin.js';
 
 class AuthController {
 
@@ -145,7 +146,8 @@ class AuthController {
 			const { username } = req.body;
 			logger.info(`Start check if username is available api with username ${username}`);
 			const existingUser = await User.findOne({ username: username });
-			if (existingUser) {
+			const existingAdmin = await Admin.findOne({ username: username });
+			if (existingUser || existingAdmin) {
 				return res.status(200).json({ available: false });
 			} else {
 				return res.status(200).json({ available: true });
@@ -160,7 +162,8 @@ class AuthController {
 			const { email } = req.body;
 			logger.info(`Start check if email is available api with email ${email}`);
 			const existingUser = await User.findOne({ email: email });
-			if (existingUser) {
+			const existingAdmin = await Admin.findOne({ email: email });
+			if (existingUser || existingAdmin) {
 				return res.status(200).json({ available: false });
 			} else {
 				return res.status(200).json({ available: true });
