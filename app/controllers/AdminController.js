@@ -10,6 +10,8 @@ import Admin from '../models/Admin.js';
 import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken";
 import { isValidEmail } from '../common/utils.js';
+import { FETCH_LIMIT } from '../constants/index.js';
+import { Types } from 'mongoose';
 
 class AdminController {
 	async actionStreamer(req, res, next) {
@@ -43,7 +45,7 @@ class AdminController {
 			}
 			logger.info(`Start get streamer api with page: ${page}, limit: ${limit}, q: ${q}`);
 			const userIds = await Stream.distinct('user');
-			const skip = (page - 1) * limit; 
+			const skip = (page - 1) * limit;
 			const searchQuery = q ? {
 				$or: [
 					{ username: { $regex: new RegExp(q, 'i') } },
@@ -82,7 +84,7 @@ class AdminController {
 			const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
 			const profileBanner = await getObjectURL(user.profileBannerS3.key, user.profileBannerS3.contentType);
 			return res.status(200).json({
-				...user, 
+				...user,
 				profilePicture: profilePicture,
 				profileBanner: profileBanner,
 				numFollowers: numFollowers
@@ -109,7 +111,7 @@ class AdminController {
 			}
 			const template = 'warningStream';
 			sendMailToUser(stream.user.email, subject, template, context);
-			if(stream.user.numBans >= 3) {
+			if (stream.user.numBans >= 3) {
 				const subjectBanStreamer = '[Duo Streaming] Ban Streamer';
 				const templateBanStreamer = 'banStreamer';
 				sendMailToUser(stream.user.email, subjectBanStreamer, templateBanStreamer, context);
@@ -151,7 +153,7 @@ class AdminController {
 				}
 				return ((finalValue - beforeValue) / beforeValue) * 100;
 			};
-			return res.status(200).json({ 
+			return res.status(200).json({
 				data: {
 					streams,
 					users,
@@ -184,10 +186,10 @@ class AdminController {
 				const token = jwt.sign(
 					{ userId: admin._id },
 					process.env.JWT_SECRET,
-					{ expiresIn: process.env.TOKEN_EXPIRE } 
+					{ expiresIn: process.env.TOKEN_EXPIRE }
 				);
 				const refreshToken = jwt.sign(
-					{ userId: admin._id }, 
+					{ userId: admin._id },
 					process.env.REFRESH_JWT_SECRET,
 					{ expiresIn: process.env.REFRESH_EXPIRE }
 				);
@@ -207,21 +209,21 @@ class AdminController {
 	}
 
 	async getSettings(req, res, next) {
-        try {
-            const userId = req.user.userId;
-            logger.info(`Start get admin settings api for ${userId}`);
-            const admin = await Admin.findById(userId);
-            if (!admin) {
-                return res.status(404).json({ message: "User not found" });
-            }
-            return res.status(200).json({
-                email: admin.email,
+		try {
+			const userId = req.user.userId;
+			logger.info(`Start get admin settings api for ${userId}`);
+			const admin = await Admin.findById(userId);
+			if (!admin) {
+				return res.status(404).json({ message: "User not found" });
+			}
+			return res.status(200).json({
+				email: admin.email,
 				username: admin.username
-            });
-        } catch (error) {
-            next(error);
-        }
-    }
+			});
+		} catch (error) {
+			next(error);
+		}
+	}
 
 	async changeEmail(req, res, next) {
 		try {
@@ -301,12 +303,12 @@ class AdminController {
 			if (!user) {
 				return res.status(400).json({ message: "User not found" });
 			}
-			
+
 			const match = await bcrypt.compare(password, user.password);
 			if (match) {
 				user.username = username;
 				await user.save();
-				return res.status(200).json({ 
+				return res.status(200).json({
 					message: "Change username successfully.",
 					newUsername: user.username
 				})
@@ -317,7 +319,54 @@ class AdminController {
 			next(error);
 		}
 	}
-	
+
+	async searchStreamsAdmin(req, res, next) {
+		try {
+            const { key, page } = req.query;
+            logger.info(`Start search streams api for admin, query ${req.query}`);
+            
+            const streams = await Stream.find({
+                $or: [
+                    { title: { $regex: key, $options: 'i' } },
+                    { tags: { $in: [key] } },
+					{ _id: Types.ObjectId.isValid(key) ? Types.ObjectId(key) : null }
+                ]
+            })
+                .populate("user", "username fullname profilePictureS3")
+				.sort({ updatedAt: -1 })
+                .skip((page - 1) * FETCH_LIMIT)
+                .limit(FETCH_LIMIT)
+                .lean();
+
+            for (const stream of streams) {
+				if (stream.s3) {
+					stream.previewImage = await getObjectURL(stream.s3?.key, stream.s3?.contentType);
+				}
+                // stream.duration = stream.finishAt - stream.startAt;
+				if (stream.user.profilePictureS3) {
+					stream.user.profilePicture = await getObjectURL(
+						stream.user.profilePictureS3.key, 
+						stream.user.profilePictureS3.contentType
+					);
+				}
+            }
+
+            const totalStreams = await Stream.countDocuments({
+                $or: [
+                    { title: { $regex: key, $options: 'i' } },
+                    { tags: { $in: [key] } },
+					{ _id: Types.ObjectId.isValid(key) ? Types.ObjectId(key) : null }
+                ]
+            });
+            const numPages = Math.ceil(totalStreams / FETCH_LIMIT);
+            return res.status(200).json({ 
+                streams: streams, 
+                numPages: numPages 
+            });
+        } catch (error) {
+            next(error);
+        }
+	}
 }
 
 export default new AdminController();
