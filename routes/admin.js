@@ -9,5 +9,6 @@ router.get('/streamers/page/:page', adminController.getStreamer);
 router.get('/streamers/:streamerId', adminController.getDetailStreamer);
 router.get('/ban-stream/:streamId', adminController.banStream);
 router.get('/overview', adminController.overview);
+router.get('/stats', adminController.statsStreamersAndViewers);
 
 export default router;

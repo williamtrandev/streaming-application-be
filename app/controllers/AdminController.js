@@ -6,6 +6,9 @@ import Stream from '../models/Stream.js';
 import Follower from '../models/Follower.js';
 import { getObjectURL } from "../common/s3.js";
 import StatsViewer from '../models/StatsViewer.js';
+import moment from 'moment';
+import 'moment-timezone';
+const timezoneName = 'Asia/Ho_Chi_Minh';
 
 class AdminController {
 	async actionStreamer(req, res, next) {
@@ -159,6 +162,81 @@ class AdminController {
 					numViewersPerMin: calculateGrowth(numViewersPerMin, numViewersPerMinCompare)
 				}
 			});
+		} catch (error) {
+			next(error);
+		}
+	}
+	async statsStreamersAndViewers(req, res, next) {
+		try {
+			logger.info(`Start admin stats api`);
+			const now = moment().tz(timezoneName);
+			const startDate = now.clone().startOf('month').toDate();
+			const endDate = now;
+
+			const lastMonthStreams = await Stream.find({
+				createdAt: { $lt: startDate }
+			});
+
+			const lastMonthUsers = await User.find({
+				createdAt: { $lt: startDate }
+			});
+
+			const lastMonthStreamers = new Set(lastMonthStreams.map(stream => stream.user.toString()));
+
+			const lastMonthStats = {
+				streamers: lastMonthUsers.filter(user => lastMonthStreamers.has(user._id.toString())).length,
+				users: lastMonthUsers.length
+			};
+
+			const currentMonthStreams = await Stream.find({
+				createdAt: { $gte: startDate, $lte: endDate }
+			});
+
+			const currentMonthUsers = await User.find({
+				createdAt: { $gte: startDate, $lte: endDate }
+			});
+
+			const currentMonthStreamers = new Set(currentMonthStreams.map(stream => stream.user.toString()));
+
+			const dailyStats = {};
+
+			currentMonthUsers.forEach(user => {
+				const date = user.createdAt.toISOString().split('T')[0]; 
+				const isStreamer = currentMonthStreamers.has(user._id.toString());
+				const type = isStreamer ? 'streamers' : 'users';
+
+				if (!dailyStats[date]) {
+					dailyStats[date] = { streamers: 0, users: 0 };
+				}
+				dailyStats[date][type] += 1;
+			});
+
+			// Tính cộng dồn
+			let cumulativeStreamers = lastMonthStats.streamers; // Số lượng streamers từ trước
+			let cumulativeUsers = lastMonthStats.users;   // Số lượng users từ trước
+
+			const result = [];
+
+			for (let date = moment(startDate).tz(timezoneName); date <= endDate; date.add(1, 'day')) {
+				const formattedDate = date.format('YYYY-MM-DD');
+
+				if (dailyStats[formattedDate]) {
+					cumulativeStreamers += dailyStats[formattedDate].streamers;
+					cumulativeUsers += dailyStats[formattedDate].users;
+				}
+
+				result.push({
+					date: formattedDate,
+					cumulativeStreamers,
+					cumulativeUsers
+				});
+			}
+
+			const labels = result.map(item => item.date);
+			const streamers = result.map(item => item.cumulativeStreamers);
+			const users = result.map(item => item.cumulativeUsers);
+
+			res.json({ labels, datasets: { streamers, users } });
 		} catch (error) {
 			next(error);
 		}
