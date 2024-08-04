@@ -6,6 +6,12 @@ import Stream from '../models/Stream.js';
 import Follower from '../models/Follower.js';
 import { getObjectURL } from "../common/s3.js";
 import StatsViewer from '../models/StatsViewer.js';
+import Admin from '../models/Admin.js';
+import bcrypt from 'bcrypt';
+import jwt from "jsonwebtoken";
+import { isValidEmail } from '../common/utils.js';
+import { FETCH_LIMIT } from '../constants/index.js';
+import { Types } from 'mongoose';
 import moment from 'moment';
 import 'moment-timezone';
 const timezoneName = 'Asia/Ho_Chi_Minh';
@@ -42,7 +48,7 @@ class AdminController {
 			}
 			logger.info(`Start get streamer api with page: ${page}, limit: ${limit}, q: ${q}`);
 			const userIds = await Stream.distinct('user');
-			const skip = (page - 1) * limit; 
+			const skip = (page - 1) * limit;
 			const searchQuery = q ? {
 				$or: [
 					{ username: { $regex: new RegExp(q, 'i') } },
@@ -81,7 +87,7 @@ class AdminController {
 			const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
 			const profileBanner = await getObjectURL(user.profileBannerS3.key, user.profileBannerS3.contentType);
 			return res.status(200).json({
-				...user, 
+				...user,
 				profilePicture: profilePicture,
 				profileBanner: profileBanner,
 				numFollowers: numFollowers
@@ -108,7 +114,7 @@ class AdminController {
 			}
 			const template = 'warningStream';
 			sendMailToUser(stream.user.email, subject, template, context);
-			if(stream.user.numBans >= 3) {
+			if (stream.user.numBans >= 3) {
 				const subjectBanStreamer = '[Duo Streaming] Ban Streamer';
 				const templateBanStreamer = 'banStreamer';
 				sendMailToUser(stream.user.email, subjectBanStreamer, templateBanStreamer, context);
@@ -150,7 +156,7 @@ class AdminController {
 				}
 				return ((finalValue - beforeValue) / beforeValue) * 100;
 			};
-			return res.status(200).json({ 
+			return res.status(200).json({
 				data: {
 					streams,
 					users,
@@ -165,6 +171,401 @@ class AdminController {
 		} catch (error) {
 			next(error);
 		}
+	}
+
+	async login(req, res, next) {
+		try {
+			logger.info("Start admin login api");
+			const { username, password } = req.body;
+			if (!username || !password) {
+				return res.status(400).json({ message: "Please enter username and password" });
+			}
+			const admin = await Admin.findOne({ username: username }).lean();
+			if (!admin) {
+				return res.status(401).json({ message: "Incorrect username or password" });
+			}
+			const match = await bcrypt.compare(password, admin.password);
+			if (match) {
+				const token = jwt.sign(
+					{ userId: admin._id },
+					process.env.JWT_SECRET,
+					{ expiresIn: process.env.TOKEN_EXPIRE }
+				);
+				const refreshToken = jwt.sign(
+					{ userId: admin._id },
+					process.env.REFRESH_JWT_SECRET,
+					{ expiresIn: process.env.REFRESH_EXPIRE }
+				);
+
+				const { password: pwd, ...userWithoutPassword } = admin;
+				return res.status(200).json({
+					user: userWithoutPassword,
+					accessToken: token,
+					refreshToken: refreshToken
+				});
+			} else {
+				return res.status(401).json({ message: "Incorrect username or password" });
+			}
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async getSettings(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			logger.info(`Start get admin settings api for ${userId}`);
+			const admin = await Admin.findById(userId);
+			if (!admin) {
+				return res.status(404).json({ message: "User not found" });
+			}
+			return res.status(200).json({
+				email: admin.email,
+				username: admin.username
+			});
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async changeEmail(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			const { email, otp } = req.body;
+			logger.info(`Start change admin email api for ${userId}, new email ${email}`);
+			if (!email) {
+				return res.status(400).json({ message: "Please enter new email address" });
+			}
+			if (!isValidEmail(email)) {
+				return res.status(400).json({ message: "Invalid email address" });
+			}
+			if (!otp) {
+				return res.status(400).json({ message: "Required field 'otp' is missing" });
+			}
+			const cachedOTP = await redisClient.getInstance().get(email);
+			if (!cachedOTP) {
+				return res.status(400).json({ message: "OTP has expired" });
+			}
+			if (cachedOTP != otp) {
+				return res.status(400).json({ message: "OTP is not match" });
+			}
+			const admin = await Admin.findById(userId);
+			if (!admin) {
+				return res.status(400).json({ message: "User not found" });
+			}
+			admin.email = email;
+			await admin.save();
+			return res.status(200).json({
+				newEmail: admin.email,
+				message: "Change email address successfully"
+			});
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async changePassword(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			const { oldPassword, newPassword } = req.body;
+			logger.info(`Start change admin password api for ${userId}`);
+			if (!oldPassword || !newPassword) {
+				return res.status(400).json({
+					message: "Please enter old password and new password"
+				});
+			}
+			const user = await Admin.findById(userId);
+			if (!user) {
+				return res.status(400).json({ message: "User not found" });
+			}
+			const match = await bcrypt.compare(oldPassword, user.password);
+			if (match) {
+				const newHashPassword = await bcrypt.hash(newPassword, 10);
+				user.password = newHashPassword;
+				await user.save();
+				return res.status(200).json({ message: "Change password successfully" });
+			} else {
+				return res.status(400).json({ message: "Your current password was incorrect" });
+			}
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async changeUsername(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			const { username, password } = req.body;
+			logger.info(`Start change admin username api for ${userId}, new username ${username}`);
+			if (!username || !password) {
+				return res.status(400).json({
+					message: "Please enter password and new username"
+				});
+			}
+			const user = await Admin.findById(userId);
+			if (!user) {
+				return res.status(400).json({ message: "User not found" });
+			}
+
+			const match = await bcrypt.compare(password, user.password);
+			if (match) {
+				user.username = username;
+				await user.save();
+				return res.status(200).json({
+					message: "Change username successfully.",
+					newUsername: user.username
+				})
+			} else {
+				return res.status(400).json({ message: "Your password was incorrect" });
+			}
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async searchStreamsAdmin(req, res, next) {
+		try {
+            const { key, page } = req.query;
+            logger.info(`Start search streams api for admin, query ${req.query}`);
+            
+            const streams = await Stream.find({
+                $or: [
+                    { title: { $regex: key, $options: 'i' } },
+                    { tags: { $in: [key] } },
+					{ _id: Types.ObjectId.isValid(key) ? Types.ObjectId(key) : null }
+                ]
+            })
+                .populate("user", "username fullname profilePictureS3")
+				.sort({ updatedAt: -1 })
+                .skip((page - 1) * FETCH_LIMIT)
+                .limit(FETCH_LIMIT)
+                .lean();
+
+            for (const stream of streams) {
+				if (stream.s3) {
+					stream.previewImage = await getObjectURL(stream.s3?.key, stream.s3?.contentType);
+				}
+                // stream.duration = stream.finishAt - stream.startAt;
+				if (stream.user.profilePictureS3) {
+					stream.user.profilePicture = await getObjectURL(
+						stream.user.profilePictureS3.key, 
+						stream.user.profilePictureS3.contentType
+					);
+				}
+            }
+
+            const totalStreams = await Stream.countDocuments({
+                $or: [
+                    { title: { $regex: key, $options: 'i' } },
+                    { tags: { $in: [key] } },
+					{ _id: Types.ObjectId.isValid(key) ? Types.ObjectId(key) : null }
+                ]
+            });
+            const numPages = Math.ceil(totalStreams / FETCH_LIMIT);
+            return res.status(200).json({ 
+                streams: streams, 
+                numPages: numPages 
+            });
+        } catch (error) {
+            next(error);
+        }
+	}
+	async login(req, res, next) {
+		try {
+			logger.info("Start admin login api");
+			const { username, password } = req.body;
+			if (!username || !password) {
+				return res.status(400).json({ message: "Please enter username and password" });
+			}
+			const admin = await Admin.findOne({ username: username }).lean();
+			if (!admin) {
+				return res.status(401).json({ message: "Incorrect username or password" });
+			}
+			const match = await bcrypt.compare(password, admin.password);
+			if (match) {
+				const token = jwt.sign(
+					{ userId: admin._id },
+					process.env.JWT_SECRET,
+					{ expiresIn: process.env.TOKEN_EXPIRE }
+				);
+				const refreshToken = jwt.sign(
+					{ userId: admin._id },
+					process.env.REFRESH_JWT_SECRET,
+					{ expiresIn: process.env.REFRESH_EXPIRE }
+				);
+
+				const { password: pwd, ...userWithoutPassword } = admin;
+				return res.status(200).json({
+					user: userWithoutPassword,
+					accessToken: token,
+					refreshToken: refreshToken
+				});
+			} else {
+				return res.status(401).json({ message: "Incorrect username or password" });
+			}
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async getSettings(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			logger.info(`Start get admin settings api for ${userId}`);
+			const admin = await Admin.findById(userId);
+			if (!admin) {
+				return res.status(404).json({ message: "User not found" });
+			}
+			return res.status(200).json({
+				email: admin.email,
+				username: admin.username
+			});
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async changeEmail(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			const { email, otp } = req.body;
+			logger.info(`Start change admin email api for ${userId}, new email ${email}`);
+			if (!email) {
+				return res.status(400).json({ message: "Please enter new email address" });
+			}
+			if (!isValidEmail(email)) {
+				return res.status(400).json({ message: "Invalid email address" });
+			}
+			if (!otp) {
+				return res.status(400).json({ message: "Required field 'otp' is missing" });
+			}
+			const cachedOTP = await redisClient.getInstance().get(email);
+			if (!cachedOTP) {
+				return res.status(400).json({ message: "OTP has expired" });
+			}
+			if (cachedOTP != otp) {
+				return res.status(400).json({ message: "OTP is not match" });
+			}
+			const admin = await Admin.findById(userId);
+			if (!admin) {
+				return res.status(400).json({ message: "User not found" });
+			}
+			admin.email = email;
+			await admin.save();
+			return res.status(200).json({
+				newEmail: admin.email,
+				message: "Change email address successfully"
+			});
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async changePassword(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			const { oldPassword, newPassword } = req.body;
+			logger.info(`Start change admin password api for ${userId}`);
+			if (!oldPassword || !newPassword) {
+				return res.status(400).json({
+					message: "Please enter old password and new password"
+				});
+			}
+			const user = await Admin.findById(userId);
+			if (!user) {
+				return res.status(400).json({ message: "User not found" });
+			}
+			const match = await bcrypt.compare(oldPassword, user.password);
+			if (match) {
+				const newHashPassword = await bcrypt.hash(newPassword, 10);
+				user.password = newHashPassword;
+				await user.save();
+				return res.status(200).json({ message: "Change password successfully" });
+			} else {
+				return res.status(400).json({ message: "Your current password was incorrect" });
+			}
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async changeUsername(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			const { username, password } = req.body;
+			logger.info(`Start change admin username api for ${userId}, new username ${username}`);
+			if (!username || !password) {
+				return res.status(400).json({
+					message: "Please enter password and new username"
+				});
+			}
+			const user = await Admin.findById(userId);
+			if (!user) {
+				return res.status(400).json({ message: "User not found" });
+			}
+
+			const match = await bcrypt.compare(password, user.password);
+			if (match) {
+				user.username = username;
+				await user.save();
+				return res.status(200).json({
+					message: "Change username successfully.",
+					newUsername: user.username
+				})
+			} else {
+				return res.status(400).json({ message: "Your password was incorrect" });
+			}
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async searchStreamsAdmin(req, res, next) {
+		try {
+            const { key, page } = req.query;
+            logger.info(`Start search streams api for admin, query ${req.query}`);
+            
+            const streams = await Stream.find({
+                $or: [
+                    { title: { $regex: key, $options: 'i' } },
+                    { tags: { $in: [key] } },
+					{ _id: Types.ObjectId.isValid(key) ? Types.ObjectId(key) : null }
+                ]
+            })
+                .populate("user", "username fullname profilePictureS3")
+				.sort({ updatedAt: -1 })
+                .skip((page - 1) * FETCH_LIMIT)
+                .limit(FETCH_LIMIT)
+                .lean();
+
+            for (const stream of streams) {
+				if (stream.s3) {
+					stream.previewImage = await getObjectURL(stream.s3?.key, stream.s3?.contentType);
+				}
+                // stream.duration = stream.finishAt - stream.startAt;
+				if (stream.user.profilePictureS3) {
+					stream.user.profilePicture = await getObjectURL(
+						stream.user.profilePictureS3.key, 
+						stream.user.profilePictureS3.contentType
+					);
+				}
+            }
+
+            const totalStreams = await Stream.countDocuments({
+                $or: [
+                    { title: { $regex: key, $options: 'i' } },
+                    { tags: { $in: [key] } },
+					{ _id: Types.ObjectId.isValid(key) ? Types.ObjectId(key) : null }
+                ]
+            });
+            const numPages = Math.ceil(totalStreams / FETCH_LIMIT);
+            return res.status(200).json({ 
+                streams: streams, 
+                numPages: numPages 
+            });
+        } catch (error) {
+            next(error);
+        }
 	}
 	async statsStreamersAndViewers(req, res, next) {
 		try {

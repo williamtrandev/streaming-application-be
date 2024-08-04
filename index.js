@@ -6,6 +6,7 @@ import morgan from "morgan";
 import willSocket from "./socket.js";
 import path from "path";
 import route from './routes/index.js';
+import seedDB from "./app/common/seed.js";
 const __dirname = path.resolve();
 
 dotenv.config();
@@ -27,8 +28,9 @@ route(app);
 const PORT = process.env.PORT || 6001;
 mongoose
 	.connect(process.env.MONGO_URI)
-	.then(() => {
+	.then(async () => {
 		console.log("DB connect successfully");
+		await seedDB();
 	})
 	.catch((error) => console.log(`${error} did not connect`));
 

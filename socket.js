@@ -201,6 +201,7 @@ const willSocket = (server) => {
 		});
 		const streamIds = streams.map(stream => stream._id.toString());
 		const bulkOperations = [];
+		const bulkOperations2 = [];
 		for (const streamId in rooms) {
 			if (rooms.hasOwnProperty(streamId) && streamIds.includes(streamId)) {
 				const viewerCount = rooms[streamId].size - 1;
@@ -211,11 +212,19 @@ const willSocket = (server) => {
 						upsert: true,
 					}
 				});
+				bulkOperations2.push({
+					updateOne: {
+						filter: { _id: streamId },
+						update: { numViewsLive: viewerCount },
+						upsert: true,
+					}
+				});
 			}
 			if(bulkOperations.length > 0) {
 				try {
 					const result = await StatsViewer.bulkWrite(bulkOperations);
-					logger.info(`Save number of viewers at ${timestamp}, status: ${result.ok === 1}`);
+					const result2 = await Stream.bulkWrite(bulkOperations2);
+					logger.info(`Save number of viewers at ${timestamp}, status: ${result.ok === 1} ; status 2: ${result2.ok === 1}`);
 				} catch(error) {
 					logger.error(`Save number of viewers failed: ${error}`);
 				}
