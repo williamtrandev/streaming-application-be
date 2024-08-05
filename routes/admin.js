@@ -16,5 +16,8 @@ router.put('/password', verifyToken, adminController.changePassword);
 router.put('/username', verifyToken, adminController.changeUsername);
 router.get('/search-streams', adminController.searchStreamsAdmin);
 router.get('/stats', adminController.statsStreamersAndViewers);
+router.post('/forgot-username', adminController.forgotUsername);
+router.post('/forgot-password', adminController.forgotPassword);
+router.post('/reset-password', adminController.resetPassword);
 
 export default router;

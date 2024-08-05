@@ -9,7 +9,7 @@ import StatsViewer from '../models/StatsViewer.js';
 import Admin from '../models/Admin.js';
 import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken";
-import { isValidEmail } from '../common/utils.js';
+import { generateOTP, isValidEmail } from '../common/utils.js';
 import { FETCH_LIMIT } from '../constants/index.js';
 import { Types } from 'mongoose';
 import moment from 'moment';
@@ -638,6 +638,89 @@ class AdminController {
 			const users = result.map(item => item.cumulativeUsers);
 
 			res.json({ labels, datasets: { streamers, users } });
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async forgotUsername(req, res, next) {
+        try {
+            const { email } = req.body;
+			logger.info(`Start forgot admin username api with email ${email}`);
+			if (!email) {
+				return res.status(400).json({ message: "Please enter your email address" });
+			}
+            const user = await Admin.findOne({ email: email });
+            if (!user) {
+                return res.status(400).json({ message: "Admin not found" });
+            }
+			const subject = '[Duo Streaming] Your username';
+			const context = {
+				username: user.username,
+				message: 'This is your username'
+			}
+			sendMailToUser(email, subject, 'forgotUsername', context);
+			return res.status(200).json({ message: "We have sent you an email containing your username. Please check your email." });
+        } catch (error) {
+			next(error);
+        }
+    }
+
+	async forgotPassword(req, res, next) {
+		try {
+			const { email, username } = req.body;
+			logger.info(`Start admin forgot password api with username ${username}, email ${email}`);
+			if (!email || !username) {
+				return res.status(400).json({ message: "Please enter email and username" });
+			}
+			const user = await Admin.findOne({ email: email, username: username });
+			if (!user) {
+				return res.status(400).json({ message: "Email and Username match with no account" });
+			}
+			const subject = '[Duo Streaming] OTP verification forgot password';
+			const otp = generateOTP();
+			await redisClient.getInstance().setEx(email, 300, otp);
+			const context = {
+				otp: otp,
+				message: "Reset password"
+			};
+			sendMailToUser(user.email, subject, 'sendOTP', context);
+			return res.status(200).json({ message: "Please check your email to continue" });
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async resetPassword(req, res, next) {
+		try {
+			const { email, password, confirmPassword, otp } = req.body;
+			logger.info(`Start admin reset password api with body ${req.body}`);
+			if (!email || !password || !otp || !confirmPassword) {
+				return res.status(400).json({
+					message: 'Please enter email, password, confirm password, otp'
+				});
+			}
+			if (password != confirmPassword) {
+				return res.status(400).json({ message: "Confirm password is not match" });
+			}
+			const cachedOTP = await redisClient.getInstance().get(email);
+			if (!cachedOTP) {
+				return res.status(400).json({ message: "OTP has expired" });
+			}
+			if (cachedOTP != otp) {
+				return res.status(400).json({ message: "OTP is not match" });
+			}
+			const newPassword = await bcrypt.hash(password, 10);
+			const updatedUser = await Admin.findOneAndUpdate(
+				{ email: email },
+				{ password: newPassword },
+				{ new: true }
+			);
+			if (updatedUser) {
+				return res.status(200).json({ message: "Reset Password successfully" });
+			} else {
+				return res.status(400).json({ message: "User not found" });
+			}
 		} catch (error) {
 			next(error);
 		}
