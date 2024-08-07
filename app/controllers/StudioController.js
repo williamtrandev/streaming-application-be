@@ -147,11 +147,12 @@ class StudioController {
 			if (!userId) {
 				return res.status(403).json({ message: 'Access denied' });
 			}
+			const user = await User.findById(userId);
 			const cacheKey = `all-coming-stream-${userId}`;
 			const cachedData = await redisClient.getInstance().get(cacheKey);
 			if (cachedData) {
 				const data = JSON.parse(cachedData);
-				return res.status(200).json({ data: data });
+				return res.status(200).json({ data: data, isBanned: user.numBans >= 3 });
 			}
 			logger.info(`Miss cache with key: ${cacheKey}`);
 			const comingStreams = await Stream.find({
@@ -161,7 +162,8 @@ class StudioController {
 			await redisClient.getInstance().setEx(cacheKey, 60 * 60 * 24, JSON.stringify(comingStreams));
 			logger.info(`Set cache key ${cacheKey}`);
 			return res.status(200).json({
-				data: comingStreams
+				data: comingStreams,
+				isBanned: user.numBans >= 3
 			})
 		} catch (error) {
 			next(error);

@@ -119,7 +119,11 @@ class AdminController {
 				const templateBanStreamer = 'banStreamer';
 				sendMailToUser(stream.user.email, subjectBanStreamer, templateBanStreamer, context);
 			}
-			return res.status(200).json({ msg: "Send message successfully" });
+			return res.status(200).json({ 
+				message: "Send message successfully",
+				streamId: streamId,
+				streamerId: stream.user._id
+			});
 		} catch (error) {
 			next(error);
 		}

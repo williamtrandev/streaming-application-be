@@ -116,7 +116,7 @@ const willSocket = (server) => {
 			console.log(`Client ${socket.id} end stream`);
 			socketToStreamMap.delete(socket.id);
 			socketToEgressMap.delete(socket.id);
-		})
+		});
 
 		socket.on("banned", (bannedId, streamId) => {
 			logger.info(`Start socket banned event with bannedId: ${bannedId}, streamId: ${streamId}`);
@@ -126,7 +126,7 @@ const willSocket = (server) => {
 			if(stream && stream.has(bannedSocketId)) {
 				userToSocketMap.delete(bannedId);
 				socketToUserMap.delete(bannedSocketId);
-				io.to(bannedSocketId).emit("clientBanned")
+				io.to(bannedSocketId).emit("clientBanned");
 			}
 		})
 
@@ -146,7 +146,20 @@ const willSocket = (server) => {
 			if (bannedSocketId) {
 				io.to(bannedSocketId).emit("clientUnbannedChat");
 			}
-		})
+		});
+
+		socket.on("bannedStream", (streamerId, streamId) => {
+			logger.info(`Start socket banned stream event with streamerId: ${streamerId}, streamId: ${streamId}`);
+			const streamerSocketId = userToSocketMap.get(streamerId);
+			if (streamerSocketId) {
+				const egressId = socketToEgressMap.get(streamerSocketId);
+				io.to(streamerSocketId).emit("clientBannedStream", streamId, egressId);
+			}
+			if (rooms[streamId]) {
+				const socketIdArray = Array.from(rooms[streamId]);
+				io.to(socketIdArray).emit("streamBanned");
+			}
+		});
 
 		socket.on('disconnect', async () => {
 			console.log(`Client disconnected: ${socket.id}`);
