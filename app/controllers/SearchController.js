@@ -38,6 +38,7 @@ class SearchController {
             const { key, page } = req.query;
             logger.info(`Start search streams api with key ${key} and page ${page}`);
             const streams = await Stream.find({
+                isBanned: false,
                 $and: [
                     {
                         $or: [
@@ -103,6 +104,7 @@ class SearchController {
                     $match: {
                         'streamInfo.finished': true,
                         'streamInfo.rerun': true,
+                        'streamInfo.isBanned': false,
                         $or: [
                             { 'streamInfo.title': { $regex: key, $options: 'i' } },
                             { 'streamInfo.tags': { $in: [key] } }
