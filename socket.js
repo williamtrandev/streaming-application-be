@@ -151,13 +151,14 @@ const willSocket = (server) => {
 		socket.on("bannedStream", (streamerId, streamId) => {
 			logger.info(`Start socket banned stream event with streamerId: ${streamerId}, streamId: ${streamId}`);
 			const streamerSocketId = userToSocketMap.get(streamerId);
+			const banStreamId = streamId;
 			if (streamerSocketId) {
-				const egressId = socketToEgressMap.get(streamerSocketId);
-				io.to(streamerSocketId).emit("clientBannedStream", streamId, egressId);
+				const banEgressId = socketToEgressMap.get(streamerSocketId);
+				io.to(streamerSocketId).emit("clientBannedStream", banStreamId, banEgressId);
 			}
 			if (rooms[streamId]) {
 				const socketIdArray = Array.from(rooms[streamId]);
-				io.to(socketIdArray).emit("streamBanned");
+				io.to(socketIdArray).emit("streamBanned", banStreamId);
 			}
 		});
 
