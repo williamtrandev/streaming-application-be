@@ -19,5 +19,6 @@ router.get('/stats', adminController.statsStreamersAndViewers);
 router.post('/forgot-username', adminController.forgotUsername);
 router.post('/forgot-password', adminController.forgotPassword);
 router.post('/reset-password', adminController.resetPassword);
+router.get('/role', verifyToken, adminController.checkAdminRole);
 
 export default router;

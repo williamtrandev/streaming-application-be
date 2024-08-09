@@ -729,6 +729,25 @@ class AdminController {
 			next(error);
 		}
 	}
+
+	async checkAdminRole(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			logger.info(`Start check admin role api with userId ${userId}`);
+			const admin = await Admin.findById(userId);
+			if (admin) {
+				return res.status(200).json({
+					isAdmin: true
+				});
+			} else {
+				return res.status(200).json({
+					isAdmin: false
+				});
+			}
+		} catch (error) {
+			next(error);
+		}
+	}
 }
 
 export default new AdminController();
