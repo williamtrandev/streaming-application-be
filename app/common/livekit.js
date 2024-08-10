@@ -70,7 +70,7 @@ const createIngress = async (streamId, username) => {
 	const ingressCached = await redisClient.getInstance().get(`${streamId}_ingress`);
 	if(ingressCached) {
 		logger.info("Get ingress from cached");
-		return ingressCached;
+		return JSON.parse(ingressCached);
 	}
 
     resetIngresses(streamId);
@@ -91,7 +91,7 @@ const createIngress = async (streamId, username) => {
     };
 	logger.info("Creating new ingress");
     const ingress = await ingressClient.createIngress(IngressInput.RTMP_INPUT, options);
-	await redisClient.getInstance().setEx(`${streamId}_ingress`, 3600, ingress);
+	await redisClient.getInstance().setEx(`${streamId}_ingress`, 3600, JSON.stringify(ingress));
 	logger.info("Set cached ingress");
     return ingress;
 }
