@@ -17,7 +17,7 @@ class StreamController {
             if (!user) {
                 return res.status(404).json({ message: 'User not found' });
             }
-            const streams = await Stream.find({ user: user._id, finished: true, rerun: true })
+            const streams = await Stream.find({ user: user._id, finished: true, rerun: true, isBanned: false })
                 .skip((page - 1) * FETCH_LIMIT)
                 .limit(FETCH_LIMIT)
                 .sort({ finishAt: -1 })
@@ -47,13 +47,13 @@ class StreamController {
                 return res.status(200).json(data);
             }
             logger.info(`Miss cache with key: ${cacheKey}`);
-            const mostViewedStreams = await Stream.find({ user: user._id, finished: true, rerun: true })
+            const mostViewedStreams = await Stream.find({ user: user._id, finished: true, rerun: true, isBanned: false })
                 .sort({ numViews: -1 }).limit(20).lean();
             for (const stream of mostViewedStreams) {
                 stream.previewImage = await getObjectURL(stream.s3.key, stream.s3.contentType);
                 stream.duration = stream.finishAt - stream.startAt;
             }
-            const mostLikedStreams = await Stream.find({ user: user._id, finished: true, rerun: true })
+            const mostLikedStreams = await Stream.find({ user: user._id, finished: true, rerun: true, isBanned: false })
                 .sort({ numLikes: -1 }).limit(20).lean();
             for (const stream of mostLikedStreams) {
                 stream.previewImage = await getObjectURL(stream.s3.key, stream.s3.contentType);
@@ -105,7 +105,8 @@ class StreamController {
                 {
                     $match: {
                         'stream.finished': true,
-                        'stream.rerun': true
+                        'stream.rerun': true,
+                        'stream.isBanned': false
                     }
                 },
                 {
@@ -176,6 +177,7 @@ class StreamController {
             const streamerIds = followedStreamers.map(follow => follow.streamer);
             const streams = await Stream.find({ 
                 user: { $in: streamerIds },
+                isBanned: false,
                 $or: [
                     { finished: true, rerun: true },
                     { finished: false }
@@ -242,7 +244,7 @@ class StreamController {
     async getHomeStreams(req, res, next) {
         try {
             const randomStreams = await Stream.aggregate([
-                { $match: { started: true, finished: false } },
+                { $match: { started: true, finished: false, isBanned: false } },
                 {
                     $lookup: {
                         from: 'users',
@@ -293,6 +295,7 @@ class StreamController {
                 const streamerIds = followedStreamers.map(follow => follow.streamer);
                 followingStreams = await Stream.find({ 
                     user: { $in: streamerIds },
+                    isBanned: false,
                     $or: [
                         { finished: true, rerun: true },
                         { finished: false }
@@ -341,6 +344,7 @@ class StreamController {
                 recommendStreams = await Stream.aggregate([
                     { $match: { 
                         tags: { $in: tags },
+                        isBanned: false,
                         $or: [
                             { finished: true, rerun: true },
                             { finished: false }
