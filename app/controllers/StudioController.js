@@ -222,12 +222,14 @@ class StudioController {
 	async deleteStream(req, res, next) {
 		try {
 			const { streamId } = req.params;
+			const userId = req?.user?.userId;
+
 			logger.info(`Start delete stream api with streamId ${streamId}`);
 			const deletedStream = await Stream.findByIdAndDelete(streamId);
 			if (!deletedStream) {
 				return res.status(404).json({ message: 'Stream not found' });
 			}
-			const cacheKey = `all-coming-stream-${deletedStream._id.toString()}`;
+			const cacheKey = `all-coming-stream-${userId}`;
 			await redisClient.getInstance().del(cacheKey);
 			logger.info(`Clear cache with key: ${cacheKey}`);
 			res.status(204).json({ message: 'Stream deleted successfully' });
@@ -590,6 +592,10 @@ class StudioController {
 				started: true,
 				finished: true
 			}).sort({ finishAt: -1 });
+			if(!latestStream) {
+				logger.info("Streamer has not stream yet");
+				return res.status(400).json({ message: "Streamer has not stream yet" });
+			}
 			const statsViewer = await StatsViewer.findOne({ stream: latestStream._id });
 			if(!statsViewer) {
 				logger.error(`Get stats viewer with streamId: ${latestStream._id} not found`);
