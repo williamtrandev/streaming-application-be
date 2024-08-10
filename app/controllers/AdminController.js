@@ -42,7 +42,7 @@ class AdminController {
 	}
 	async getStreamer(req, res, next) {
 		try {
-			const logger = loggerWrapper("actionStreamer");
+			const logger = loggerWrapper("getStreamer");
 			const { page } = req.params;
 			let { q, limit } = req.query;
 			if (!limit) {
@@ -79,6 +79,7 @@ class AdminController {
 	}
 	async getDetailStreamer(req, res, next) {
 		try {
+			const logger = loggerWrapper("getDetailStreamer");
 			const { streamerId } = req.params;
 			logger.info(`Start get streamer's detail api with streamerId: ${streamerId}`);
 			const user = await User.findById(streamerId).select('-password').lean();
@@ -100,6 +101,7 @@ class AdminController {
 	}
 	async banStream(req, res, next) {
 		try {
+			const logger = loggerWrapper("banStream");
 			const streamId = req.params.streamId;
 			logger.info(`Start ban streamer api with streamId: ${streamId}`);
 			const stream = await Stream.findById(streamId).populate('user');
@@ -132,6 +134,7 @@ class AdminController {
 	}
 	async overview(req, res, next) {
 		try {
+			const logger = loggerWrapper("overview");
 			const { from, to } = req.query;
 			logger.info(`Start overview api with fromDate: ${from}, toDate: ${to}`);
 			const fromDate = new Date(from);
@@ -180,6 +183,7 @@ class AdminController {
 	}
 	async login(req, res, next) {
 		try {
+			const logger = loggerWrapper("adminLogin");
 			logger.info("Start admin login api");
 			const { username, password } = req.body;
 			if (!username || !password) {
@@ -217,6 +221,7 @@ class AdminController {
 	}
 	async getSettings(req, res, next) {
 		try {
+			const logger = loggerWrapper("adminGetSettings");
 			const userId = req.user.userId;
 			logger.info(`Start get admin settings api for ${userId}`);
 			const admin = await Admin.findById(userId);
@@ -233,6 +238,7 @@ class AdminController {
 	}
 	async changeEmail(req, res, next) {
 		try {
+			const logger = loggerWrapper("adminChangeEmail");
 			const userId = req.user.userId;
 			const { email, otp } = req.body;
 			logger.info(`Start change admin email api for ${userId}, new email ${email}`);
@@ -268,6 +274,7 @@ class AdminController {
 	}
 	async changePassword(req, res, next) {
 		try {
+			const logger = loggerWrapper("adminChangePassword");
 			const userId = req.user.userId;
 			const { oldPassword, newPassword } = req.body;
 			logger.info(`Start change admin password api for ${userId}`);
@@ -295,6 +302,7 @@ class AdminController {
 	}
 	async changeUsername(req, res, next) {
 		try {
+			const logger = loggerWrapper("adminChangeUsername");
 			const userId = req.user.userId;
 			const { username, password } = req.body;
 			logger.info(`Start change admin username api for ${userId}, new username ${username}`);
@@ -325,6 +333,7 @@ class AdminController {
 	}
 	async searchStreamsAdmin(req, res, next) {
 		try {
+			const logger = loggerWrapper("searchStreamsAdmin");
             const { key, page } = req.query;
             logger.info(`Start search streams api for admin, query ${req.query}`);
             
@@ -372,6 +381,7 @@ class AdminController {
 	}
 	async statsStreamersAndViewers(req, res, next) {
 		try {
+			const logger = loggerWrapper("statsStreamersAndViewers");
 			logger.info(`Start admin stats api`);
 			const now = moment().tz(timezoneName);
 			const startDate = now.clone().startOf('month').toDate();
@@ -448,6 +458,7 @@ class AdminController {
 
 	async forgotUsername(req, res, next) {
         try {
+			const logger = loggerWrapper("adminForgotUsername");
             const { email } = req.body;
 			logger.info(`Start forgot admin username api with email ${email}`);
 			if (!email) {
@@ -471,6 +482,7 @@ class AdminController {
 
 	async forgotPassword(req, res, next) {
 		try {
+			const logger = loggerWrapper("adminForgotPassword");
 			const { email, username } = req.body;
 			logger.info(`Start admin forgot password api with username ${username}, email ${email}`);
 			if (!email || !username) {
@@ -496,6 +508,7 @@ class AdminController {
 
 	async resetPassword(req, res, next) {
 		try {
+			const logger = loggerWrapper("adminResetPassword");
 			const { email, password, confirmPassword, otp } = req.body;
 			logger.info(`Start admin reset password api with body ${req.body}`);
 			if (!email || !password || !otp || !confirmPassword) {
@@ -531,6 +544,7 @@ class AdminController {
 
 	async checkAdminRole(req, res, next) {
 		try {
+			const logger = loggerWrapper("checkAdminRole");
 			const userId = req.user.userId;
 			logger.info(`Start check admin role api with userId ${userId}`);
 			const admin = await Admin.findById(userId);
