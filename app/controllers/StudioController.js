@@ -41,6 +41,9 @@ class StudioController {
 			const updatedData = await Stream.findByIdAndUpdate(data._id, {
 				$set: { "s3.key": imageKey, "s3.contentType": contentType }
 			});
+			const cacheKey = `all-coming-stream-${userId}`;
+			await redisClient.getInstance().del(cacheKey);
+			logger.info(`Clear cache with key: ${cacheKey}`);
 			return res.status(201).json({
 				message: "Create stream successfully",
 				stream: updatedData
