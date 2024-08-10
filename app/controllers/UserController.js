@@ -4,13 +4,14 @@ import Follower from "../models/Follower.js";
 import { Types } from "mongoose";
 import { getObjectURL, putImageObject } from "../common/s3.js";
 import { S3_PATH } from "../constants/index.js";
-import logger from "../common/logger.js";
+import loggerWrapper from "../common/logger.js";
 import Stream from "../models/Stream.js";
 import Banned from "../models/Banned.js";
 
 class UserController {
     async changeProfilePicture(req, res, next) {
         try {
+            const logger = loggerWrapper("changeProfilePicture");
             const userId = req.user.userId;
             const { profilePicture } = req.body;
             logger.info(`Start change profile picture api for ${userId}, profilePicture ${profilePicture}`);
@@ -42,6 +43,7 @@ class UserController {
 
     async changeProfileBanner(req, res, next) {
         try {
+            const logger = loggerWrapper("changeProfileBanner");
             const userId = req.user.userId;
             const { profileBanner } = req.body;
             logger.info(`Start change profile banner api for ${userId}, profileBanner ${profileBanner}`);
@@ -73,6 +75,7 @@ class UserController {
 
     async changeProfileInfo(req, res, next) {
         try {
+            const logger = loggerWrapper("changeProfileInfo");
             const userId = req.user.userId;
             const { fullname, about } = req.body;
             logger.info(`Start change profile information api for ${userId}, body ${req.body}`);
@@ -100,6 +103,7 @@ class UserController {
 
     async getProfile(req, res, next) {
         try {
+            const logger = loggerWrapper("getProfile");
             const { userId } = req.params;
             logger.info(`Start get profile api for ${userId}`);
             const user = await User.findById(userId);
@@ -126,6 +130,7 @@ class UserController {
 
     async getMiniProfile(req, res, next) {
         try {
+            const logger = loggerWrapper("getMiniProfile");
             const { userId } = req.params;
             logger.info(`Start get header profile for ${userId}`);
             const user = await User.findById(userId).lean();
@@ -150,6 +155,7 @@ class UserController {
 
     async changeLinks(req, res, next) {
         try {
+            const logger = loggerWrapper("changeLinks");
             const userId = req.user.userId;
             const { links } = req.body;
             logger.info(`Start change links api for ${userId}, links ${links}`);
@@ -173,6 +179,7 @@ class UserController {
 
     async getEmail(req, res, next) {
         try {
+            const logger = loggerWrapper("getEmail");
             const { userId } = req.params;
             logger.info(`Start get email api for ${userId}`);
             const user = await User.findById(userId);
@@ -189,6 +196,7 @@ class UserController {
 
     async follow(req, res, next) {
         try {
+            const logger = loggerWrapper("follow");
             const { streamerId } = req.body;
             const userId = req.user.userId;
             logger.info(`Start follow api for ${userId}, streamerId ${streamerId}`);
@@ -228,6 +236,7 @@ class UserController {
 
     async getFollowedChannels(req, res, next) {
         try {
+            const logger = loggerWrapper("getFollowedChannels");
             const userId = req.params.userId;
             logger.info(`Start get followed channels api for ${userId}`);
             const followers = await Follower.aggregate([
@@ -279,6 +288,7 @@ class UserController {
 
     async getStreamerProfile(req, res, next) {
         try {
+            const logger = loggerWrapper("getStreamerProfile");
             const { username } = req.params;
             logger.info(`Start get streamer's profile api with username ${username}`);
             const user = await User.findOne({ username: username });
@@ -303,6 +313,7 @@ class UserController {
 
     async getStreamerAbout(req, res, next) {
         try {
+            const logger = loggerWrapper("getStreamerAbout");
             const { username } = req.params;
             logger.info(`Start get streamer's about api with username ${username}`);
             const user = await User.findOne({ username: username });
@@ -321,6 +332,7 @@ class UserController {
 
     async getFollow(req, res, next) {
         try {
+            const logger = loggerWrapper("getFollow");
             const { userId, streamerId } = req.params;
             logger.info(`Start get follow information api for ${userId}, streamerId ${streamerId}`);
             const follow = await Follower.findOne({ user: userId, streamer: streamerId });
@@ -335,6 +347,7 @@ class UserController {
 
     async toggleNotification(req, res, next) {
         try {
+            const logger = loggerWrapper("toggleNotification");
             const userId = req.user.userId;
             const { streamerId } = req.body;
             logger.info(`Start toggle notification api for ${userId}, streamerId ${streamerId}`);
@@ -354,6 +367,7 @@ class UserController {
 
     async unfollow(req, res, next) {
         try {
+            const logger = loggerWrapper("unfollow");
             const userId = req.user.userId;
             const { streamerId } = req.params;
             logger.info(`Start unfollow api for ${userId}, streamerId ${streamerId}`);
@@ -377,6 +391,7 @@ class UserController {
 
     async checkIsMod(req, res, next) {
         try {
+            const logger = loggerWrapper("checkIsMod");
             const userId = req.user.userId;
             const streamerId = req.params.streamerId;
             const streamer = await User.findById(streamerId);
@@ -390,6 +405,7 @@ class UserController {
 
     async checkIsBanned(req, res, next) {
         try {
+            const logger = loggerWrapper("checkIsBanned");
             const userId = req.user.userId;
             const streamId = req.params.streamId;
             const typeBanned = req.query.typeBanned;
@@ -404,6 +420,7 @@ class UserController {
 
     async getBannedPermission(req, res, next) {
         try {
+            const logger = loggerWrapper("getBannedPermission");
             const { userId, streamId } = req.params;
             logger.info(`Call api check banned permission with userId: ${userId}, streamId: ${streamId}`);
             const banneds = await Banned.find({ user: userId, stream: streamId });

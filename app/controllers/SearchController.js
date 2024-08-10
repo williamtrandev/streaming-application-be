@@ -1,5 +1,5 @@
 import { calculateStringSimilarity } from "../common/utils.js";
-import logger from "../common/logger.js";
+import loggerWrapper from "../common/logger.js";
 import { FETCH_LIMIT } from "../constants/index.js";
 import History from "../models/History.js";
 import Stream from "../models/Stream.js";
@@ -10,6 +10,7 @@ import { getObjectURL } from "../common/s3.js"
 class SearchController {
     async searchChannels(req, res, next) {
         try {
+            const logger = loggerWrapper("searchChannels");
             const key = req.query.key;
             logger.info("Start search for channels api with key: " + key);
             const channels = await User.find({
@@ -35,6 +36,7 @@ class SearchController {
 
     async searchStreams(req, res, next) {
         try {
+            const logger = loggerWrapper("searchStreams");
             const { key, page } = req.query;
             logger.info(`Start search streams api with key ${key} and page ${page}`);
             const streams = await Stream.find({
@@ -80,6 +82,7 @@ class SearchController {
 
     async searchHistory(req, res, next) {
         try {
+            const logger = loggerWrapper("searchHistory");
             const { userId } = req.params;
             const { key, page } = req.query;
             logger.info(`Start search history api with userId ${userId}, key ${key}, page ${page}`);
@@ -172,6 +175,7 @@ class SearchController {
 
     async searchUsers(req, res, next) {
         try {
+            const logger = loggerWrapper("searchUsers");
             const { q, limit, exclude } = req.query;
             logger.info(`Start search users api with q: ${q}, limit: ${limit}, exclude: ${exclude}`);
             let excludedUserIds = [];
@@ -220,6 +224,7 @@ class SearchController {
 
     async searchSavedStream(req, res, next) {
         try {
+            const logger = loggerWrapper("searchSavedStream");
             const userId = req.user.userId;
             const { key, page, date, numViews, numViewsLive } = req.query;
             logger.info(`Start search saved stream api for ${userId}, query ${req.query}`);

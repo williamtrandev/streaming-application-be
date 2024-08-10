@@ -1,4 +1,4 @@
-import logger from '../common/logger.js';
+import loggerWrapper from '../common/logger.js';
 import redisClient from '../common/redis.js';
 import { getObjectURL } from '../common/s3.js';
 import Chat from "../models/Chat.js";
@@ -6,6 +6,7 @@ import Chat from "../models/Chat.js";
 class ChatController {
 	async sendMessage(req, res, next) {
 		try {
+			const logger = loggerWrapper("sendMessage");
 			logger.info("Start send message api with body: " + req.body);
 			const { userId, streamId, duration, content, isStreamer } = req.body;
 			if (!userId || !streamId || !duration || !content) {
@@ -29,6 +30,7 @@ class ChatController {
 
 	async getAllMessages(req, res, next) {
 		try {
+			const logger = loggerWrapper("getAllMessages");
 			const { streamId } = req.params;
 			logger.info("Call api get all messages of stream " + streamId);
 			const { limit } = req.query;

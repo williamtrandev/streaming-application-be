@@ -8,7 +8,7 @@ import { getObjectURL, putImageObject } from "../common/s3.js";
 import { endRecord, startRecord } from "../common/livekit.js";
 import History from "../models/History.js";
 import Chat from "../models/Chat.js";
-import logger from "../common/logger.js";
+import loggerWrapper from "../common/logger.js";
 import Banned from "../models/Banned.js";
 import StatsViewer from "../models/StatsViewer.js";
 import redisClient from '../common/redis.js';
@@ -17,6 +17,7 @@ import redisClient from '../common/redis.js';
 class StudioController {
 	async saveStream(req, res, next) {
 		try {
+			const logger = loggerWrapper("saveStream");
 			const { userId, title, description, dateStream, tags, previewImage, rerun } = req.body;
 			logger.info(`Start save stream api with body ${req.body}`);
 			if (!userId || !title || !description || !dateStream) {
@@ -54,6 +55,7 @@ class StudioController {
 	}
 	async saveNotification(req, res, next) {
 		try {
+			const logger = loggerWrapper("saveNotification");
 			const { userId, streamId } = req.body;
 			logger.info(`Start save notification with body ${req.body}`);
 			if (!userId || !streamId) {
@@ -81,6 +83,7 @@ class StudioController {
 	}
 	async getNotification(req, res, next) {
 		try {
+			const logger = loggerWrapper("getNotification");
 			const userId = req.user.userId;
 			const page = req.params.page;
 			logger.info(`Start get notification for ${userId}, page ${page}`);
@@ -113,6 +116,7 @@ class StudioController {
 
 	async getDetailStream(req, res, next) {
 		try {
+			const logger = loggerWrapper("getDetailStream");
 			const { streamId } = req.params;
 			logger.info(`Start get detail stream api with streamId ${streamId}`);
 			const stream = await Stream.findById(streamId)
@@ -145,6 +149,7 @@ class StudioController {
 
 	async getAllComingStreams(req, res, next) {
 		try {
+			const logger = loggerWrapper("getAllComingStreams");
 			const userId = req?.user?.userId;
 			logger.info(`Start get all coming streams api for ${userId}`);
 			if (!userId) {
@@ -175,6 +180,7 @@ class StudioController {
 
 	async editStream(req, res, next) {
 		try {
+			const logger = loggerWrapper("editStream");
 			const { streamId } = req.params;
 			const userId = req?.user?.userId;
 			logger.info(`Start edit stream api with streamId ${streamId}, body ${req.body}`)
@@ -224,6 +230,7 @@ class StudioController {
 
 	async deleteStream(req, res, next) {
 		try {
+			const logger = loggerWrapper("deleteStream");
 			const { streamId } = req.params;
 			const userId = req?.user?.userId;
 
@@ -243,6 +250,7 @@ class StudioController {
 
 	async getAllMods(req, res, next) {
 		try {
+			const logger = loggerWrapper("getAllMods");
 			const userId = req?.user?.userId;
 			logger.info(`Start get all mods api with userId ${userId}`);
 			if (!userId) {
@@ -277,6 +285,7 @@ class StudioController {
 
 	async addMod(req, res, next) {
 		try {
+			const logger = loggerWrapper("addMod");
 			const userId = req?.user?.userId;
 			const { modId, role } = req.body;
 			logger.info(`Start add mod api with userId: ${userId}, body: ${req.body}`);
@@ -315,6 +324,7 @@ class StudioController {
 
 	async deleteMod(req, res, next) {
 		try {
+			const logger = loggerWrapper("deleteMod");
 			const userId = req?.user?.userId;
 			const { modId } = req.params; 
 			logger.info(`Start delete mod api with userId ${userId}, modId ${modId}`);
@@ -348,6 +358,7 @@ class StudioController {
 
 	async startStream(req, res, next) {
 		try {
+			const logger = loggerWrapper("startStream");
 			const streamId = req.params.streamId;
 			logger.info(`Start start stream api with streamId ${streamId}`);
 			const stream = await Stream.findByIdAndUpdate(streamId, { 
@@ -370,6 +381,7 @@ class StudioController {
 
 	async endStream(req, res, next) {
 		try {
+			const logger = loggerWrapper("endStream");
 			const { streamId, egressId } = req.params; 
 			const userId = req?.user?.userId;
 			logger.info(`Start end stream api with streamId ${streamId}, egressId ${egressId}`);
@@ -393,6 +405,7 @@ class StudioController {
 	}
 	async getServerUrlAndStreamKey(req, res, next) {
 		try {
+			const logger = loggerWrapper("getServerUrlAndStreamKey");
 			const { username, streamId } = req.params;
 			logger.info(`Start get server url and stream key username ${username}, streamId ${streamId}`);
 			const ingress = await createIngress(streamId, username);
@@ -408,6 +421,7 @@ class StudioController {
 
 	async getStreamerToken(req, res, next) {
 		try {
+			const logger = loggerWrapper("getStreamerToken");
 			const { streamId } = req.body;
 			logger.info(`Start get stream token with streamId ${streamId}`);
 			const token = await generateStreamerToken(streamId);
@@ -421,6 +435,7 @@ class StudioController {
 
 	async getViewerToken(req, res, next) {
 		try {
+			const logger = loggerWrapper("getViewerToken");
 			const { streamId, userId } = req.body;
 			logger.info(`Start get viewer token with streamId ${streamId}, userId ${userId}`);
 
@@ -435,6 +450,7 @@ class StudioController {
 
 	async getVideoRecord(req, res, next) {
 		try {
+			const logger = loggerWrapper("getVideoRecord");
 			const streamId = req.params.streamId;
 			logger.info(`Start get video record api with streamId ${streamId}`)
 			const streamLink = await getObjectURL(`record/${streamId}`);
@@ -448,6 +464,7 @@ class StudioController {
 
 	async deleteSavedStreams(req, res, next) {
 		try {
+			const logger = loggerWrapper("deleteSavedStreams");
 			const { streamIds } = req.body;
 			const userId = req.user.userId;
 			logger.info(`Start delete saved streams api for ${userId}, streamIds ${streamIds}`);
@@ -469,6 +486,7 @@ class StudioController {
 
 	async getStats(req, res, next) {
 		try {
+			const logger = loggerWrapper("getStats");
 			const userId = req.user.userId;
 			const { statsType, fromDate, toDate } = req.query;
 			logger.info(`Start get stats api with userId ${userId}, statsType ${statsType}, fromDate ${fromDate}, toDate ${toDate}`);
@@ -558,6 +576,7 @@ class StudioController {
 
 	async banViewer(req, res, next) {
 		try {	
+			const logger = loggerWrapper("banViewer");
 			const { bannedId, streamId, typeBanned } = req.body;
 			logger.info(`Call ban viewer api with userId: ${bannedId}, streamId: ${streamId}`);
 			const banned = await Banned.create({
@@ -573,6 +592,7 @@ class StudioController {
 
 	async unbanViewer(req, res, next) {
 		try {	
+			const logger = loggerWrapper("unbanViewer");
 			const { bannedId, streamId, typeBanned } = req.body;
 			logger.info(`Call unban viewer api with userId: ${bannedId}, streamId: ${streamId}`);
 			const banned = await Banned.findOneAndDelete({
@@ -588,6 +608,7 @@ class StudioController {
 
 	async getStatsViewer(req, res, next) {
 		try {
+			const logger = loggerWrapper("getStatsViewer");
 			const userId = req.user.userId;
 			logger.error(`Start get stats viewer api with userId: ${userId}`);
 			const latestStream = await Stream.findOne({

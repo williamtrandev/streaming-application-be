@@ -1,10 +1,11 @@
-import logger from "../common/logger.js";
+import loggerWrapper from "../common/logger.js";
 import History from "../models/History.js";
 import Stream from "../models/Stream.js";
 
 class HistoryController {
     async writeHistory(req, res, next) {
         try {
+            const logger = loggerWrapper("writeHistory");
             const { streamId } = req.body;
             const userId = req.user.userId;
             logger.info(`Start write history api for ${userId}, streamId ${streamId}`);
@@ -32,6 +33,7 @@ class HistoryController {
 
     async likeStream(req, res, next) {
         try {
+            const logger = loggerWrapper("likeStream");
             const { streamId, liked } = req.body;
             const userId = req.user.userId;
             logger.info(`Start like stream api for ${userId}, streamId ${streamId}`);

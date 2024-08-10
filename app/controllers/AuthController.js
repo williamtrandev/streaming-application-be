@@ -5,13 +5,14 @@ import jwt from "jsonwebtoken";
 import { sendMailToUser } from "../common/mail.js";
 import { generateOTP, containsWhitespace, containsSpecialCharacter, isValidEmail } from '../common/utils.js';
 import { OTP } from '../constants/index.js';
-import logger from '../common/logger.js';
+import loggerWrapper from '../common/logger.js';
 import Admin from '../models/Admin.js';
 
 class AuthController {
 
 	async login(req, res, next) {
 		try {
+			const logger = loggerWrapper("login");
 			logger.info("Start login api");
 			const { username, password } = req.body;
 			if (!username || !password) {
@@ -50,6 +51,7 @@ class AuthController {
 
 	async refreshToken(req, res, next) {
 		try {
+			const logger = loggerWrapper("refreshToken");
 			logger.info("Start get refresh token api");
 			const refreshToken = req.body.refreshToken;
 
@@ -83,6 +85,7 @@ class AuthController {
 	
 	async forgotPassword(req, res, next) {
 		try {
+			const logger = loggerWrapper("forgotPassword");
 			const { email, username } = req.body;
 			logger.info(`Start forgot password api with username ${username}, email ${email}`);
 			if (!email || !username) {
@@ -108,6 +111,7 @@ class AuthController {
 
 	async resetPassword(req, res, next) {
 		try {
+			const logger = loggerWrapper("resetPassword");
 			const { email, password, confirmPassword, otp } = req.body;
 			logger.info(`Start reset password api with body ${req.body}`);
 			if (!email || !password || !otp || !confirmPassword) {
@@ -143,6 +147,7 @@ class AuthController {
 
 	async checkUsernameAvailable(req, res, next) {
 		try {
+			const logger = loggerWrapper("checkUsernameAvailable");
 			const { username } = req.body;
 			logger.info(`Start check if username is available api with username ${username}`);
 			const existingUser = await User.findOne({ username: username });
@@ -159,6 +164,7 @@ class AuthController {
 
 	async checkEmailAvailable(req, res, next) {
 		try {
+			const logger = loggerWrapper("checkEmailAvailable");
 			const { email } = req.body;
 			logger.info(`Start check if email is available api with email ${email}`);
 			const existingUser = await User.findOne({ email: email });
@@ -175,6 +181,7 @@ class AuthController {
 
 	async sendVerifyEmail(req, res, next) {
 		try {
+			const logger = loggerWrapper("sendVerifyEmail");
 			const { email } = req.body;
 			logger.info(`Start send verify email api to ${email}`);
 			const otp = generateOTP();
@@ -193,6 +200,7 @@ class AuthController {
 
 	async register(req, res, next) {
 		try {
+			const logger = loggerWrapper("register");
 			const { username, fullname, password, email, otp } = req.body;
 			logger.info(`Start register api with body ${req.body}`);
 			if (!username) {
@@ -277,6 +285,7 @@ class AuthController {
 
 	async changePassword(req, res, next) {
 		try {
+			const logger = loggerWrapper("changePassword");
 			const userId = req.user.userId;
 			const { oldPassword, newPassword } = req.body;
 			logger.info(`Start change password api for ${userId}`);
@@ -305,6 +314,7 @@ class AuthController {
 
 	async changeUsername(req, res, next) {
 		try {
+			const logger = loggerWrapper("changeUsername");
 			const userId = req.user.userId;
 			const { username, password } = req.body;
 			logger.info(`Start change username api for ${userId}, new username ${username}`);
@@ -342,6 +352,7 @@ class AuthController {
 
 	async changeEmail(req, res, next) {
 		try {
+			const logger = loggerWrapper("changeEmail");
 			const userId = req.user.userId;
 			const { email, otp } = req.body;
 			logger.info(`Start change email api for ${userId}, new email ${email}`);
@@ -378,6 +389,7 @@ class AuthController {
 
 	async forgotUsername(req, res, next) {
         try {
+			const logger = loggerWrapper("forgotUsername");
             const { email } = req.body;
 			logger.info(`Start forgot username api with email ${email}`);
 			if (!email) {

@@ -32,4 +32,13 @@ const logger = createLogger({
 	]
 });
 
-export default logger;
+const loggerWrapper = (functionName) => {
+	return {
+		info: (message, ...args) => logger.info(`[${functionName}] ${message}`, ...args),
+		warn: (message, ...args) => logger.warn(`[${functionName}] ${message}`, ...args),
+		error: (message, ...args) => logger.error(`[${functionName}] ${message}`, ...args),
+		debug: (message, ...args) => logger.debug(`[${functionName}] ${message}`, ...args),
+	};
+};
+
+export default loggerWrapper;

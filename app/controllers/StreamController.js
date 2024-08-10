@@ -1,5 +1,5 @@
 import { getObjectURL } from "../common/s3.js";
-import logger from "../common/logger.js";
+import loggerWrapper from "../common/logger.js";
 import { FETCH_LIMIT } from "../constants/index.js";
 import Follower from "../models/Follower.js";
 import History from "../models/History.js";
@@ -11,6 +11,7 @@ import redisClient from '../common/redis.js';
 class StreamController {
     async getSavedStreams(req, res, next) {
         try {
+            const logger = loggerWrapper("getSavedStreams");
             const { username, page } = req.params;
             logger.info(`Start get saved stream api with username ${username}, page ${page}`);
             const user = await User.findOne({ username: username });
@@ -34,6 +35,7 @@ class StreamController {
 
     async getStreamerHomeStreams(req, res, next) {
         try {
+            const logger = loggerWrapper("getStreamerHomeStreams");
             const { username } = req.params;
             logger.info("Start get streamer home api with username " + username);
             const user = await User.findOne({ username: username });
@@ -82,6 +84,7 @@ class StreamController {
 
     async getLikedStreams(req, res, next) {
         try {
+            const logger = loggerWrapper("getLikedStreams");
             const { userId, page } = req.params;
             logger.info(`Start get liked streams api with userId ${userId}, page ${page}`);
             const histories = await History.aggregate([
@@ -171,6 +174,7 @@ class StreamController {
 
     async getFollowingStreams(req, res, next) {
         try {
+            const logger = loggerWrapper("getFollowingStreams");
             const { userId, page } = req.params;
             logger.info(`Start get following streams with userId ${userId}, page ${page}`);
             const followedStreamers = await Follower.find({ user: userId }).select('streamer');
@@ -212,6 +216,7 @@ class StreamController {
 
     async getNumLikesAndDislikes(req, res, next) {
         try {
+            const logger = loggerWrapper("getNumLikesAndDislikes");
             const { streamId } = req.params;
             logger.info(`Start get number of likes, dislikes and views of stream ${streamId}`);
             const stream = await Stream.findById(streamId);
@@ -230,6 +235,7 @@ class StreamController {
 
     async riseNumViews(req, res, next) {
         try {
+            const logger = loggerWrapper("riseNumViews");
             const { streamId } = req.body;
             logger.info(`Start rise number of views of stream ${streamId}`);
             await Stream.findByIdAndUpdate(streamId, { $inc: { numViews: 1 } });
@@ -243,6 +249,7 @@ class StreamController {
 
     async getHomeStreams(req, res, next) {
         try {
+            const logger = loggerWrapper("getHomeStreams");
             const randomStreams = await Stream.aggregate([
                 { $match: { started: true, finished: false, isBanned: false } },
                 {

@@ -1,7 +1,7 @@
 import redisClient from '../common/redis.js';
 import User from "../models/User.js";
 import { sendMailToUser } from "../common/mail.js";
-import logger from '../common/logger.js';
+import loggerWrapper from '../common/logger.js';
 import Stream from '../models/Stream.js';
 import Follower from '../models/Follower.js';
 import { getObjectURL } from "../common/s3.js";
@@ -19,6 +19,7 @@ const timezoneName = 'Asia/Ho_Chi_Minh';
 class AdminController {
 	async actionStreamer(req, res, next) {
 		try {
+			const logger = loggerWrapper("actionStreamer");
 			const streamerId = req.params.streamerId;
 			const typeAction = req.query.type;
 			logger.info(`Start ban streamer api with streamerId: ${streamerId}, type: ${typeAction}`);
@@ -41,6 +42,7 @@ class AdminController {
 	}
 	async getStreamer(req, res, next) {
 		try {
+			const logger = loggerWrapper("actionStreamer");
 			const { page } = req.params;
 			let { q, limit } = req.query;
 			if (!limit) {

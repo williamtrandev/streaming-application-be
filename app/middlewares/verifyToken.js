@@ -1,8 +1,9 @@
 import jwt from 'jsonwebtoken';
-import logger from '../common/logger.js';
+import loggerWrapper from '../common/logger.js';
 
 const verifyToken = async (req, res, next) => {
 	try {
+		const logger = loggerWrapper("verifyToken");
 		logger.info("Middleware called");
 		let token = req.header("Authorization");
 		if (!token) {

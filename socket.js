@@ -4,8 +4,10 @@ import Stream from "./app/models/Stream.js";
 import Follower from "./app/models/Follower.js";
 import { getObjectURL } from "./app/common/s3.js";
 import { endRecord } from "./app/common/livekit.js";
-import logger from "./app/common/logger.js";
+import loggerWrapper from "./app/common/logger.js";
 import StatsViewer from "./app/models/StatsViewer.js";
+
+const logger = loggerWrapper("Socket");
 
 const willSocket = (server) => {
 	const io = new Server(server, {
