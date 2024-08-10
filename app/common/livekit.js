@@ -1,6 +1,7 @@
 import { EgressClient, EncodedFileOutput, EncodedFileType, S3Upload, AccessToken, IngressAudioEncodingPreset, IngressClient, IngressInput, IngressVideoEncodingPreset, RoomServiceClient, TrackSource } from "livekit-server-sdk";
 import redisClient from "./redis.js";
 import dotenv from 'dotenv';
+import logger from "./logger.js";
 dotenv.config();
 
 const generateStreamerToken = async (streamId) => {
@@ -49,6 +50,7 @@ const ingressClient = new IngressClient(
 );
 
 const resetIngresses = async (hostId) => {
+	logger.info("Starting reseting ingresses with host " + hostId);
     const ingresses = await ingressClient.listIngress({ roomName: hostId });
     const rooms = await roomService.listRooms([hostId]);
     for (const room of rooms) {
@@ -62,8 +64,10 @@ const resetIngresses = async (hostId) => {
 }
 
 const createIngress = async (streamId, username) => {
+	logger.info("Starting to create ingress");
 	const ingressCached = await redisClient.getInstance().get(`${streamId}_ingress`);
 	if(ingressCached) {
+		logger.info("Get ingress from cached");
 		return JSON.parse(ingressCached);
 	}
 
@@ -83,9 +87,10 @@ const createIngress = async (streamId, username) => {
             preset: IngressAudioEncodingPreset.OPUS_STEREO_96KBPS
         }
     };
-
+	logger.info("Creating new ingress");
     const ingress = await ingressClient.createIngress(IngressInput.RTMP_INPUT, options);
 	await redisClient.getInstance().setEx(`${streamId}_ingress`, 3600, JSON.stringify(ingress));
+	logger.info("Set cached ingress");
     return ingress;
 }
 
