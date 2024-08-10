@@ -158,7 +158,7 @@ class StudioController {
 				user: userId,
 				started: false
 			}).lean();
-			await redisClient.getInstance().setEx(cacheKey, 60 * 60 * 24, JSON.stringify(comingStreams));
+			await redisClient.getInstance().setEx(cacheKey, 60, JSON.stringify(comingStreams));
 			logger.info(`Set cache key ${cacheKey}`);
 			return res.status(200).json({
 				data: comingStreams
@@ -171,6 +171,7 @@ class StudioController {
 	async editStream(req, res, next) {
 		try {
 			const { streamId } = req.params;
+			const userId = req?.user?.userId;
 			logger.info(`Start edit stream api with streamId ${streamId}, body ${req.body}`)
 			const { title, description, dateStream, tags, previewImage, rerun } = req.body;
 			const currentStream = await Stream.findById(streamId);
@@ -203,7 +204,7 @@ class StudioController {
 				return res.status(500).json({ message: "Failed to update stream" });
 			}
 
-			const cacheKey = `all-coming-stream-${currentStream._id.toString()}`;
+			const cacheKey = `all-coming-stream-${userId}`;
 			await redisClient.getInstance().del(cacheKey);
 			logger.info(`Clear cache with key: ${cacheKey}`);
 
@@ -362,7 +363,8 @@ class StudioController {
 
 	async endStream(req, res, next) {
 		try {
-			const { streamId, egressId } = req.params;
+			const { streamId, egressId } = req.params; 
+			const userId = req?.user?.userId;
 			logger.info(`Start end stream api with streamId ${streamId}, egressId ${egressId}`);
 			const stream = await Stream.findByIdAndUpdate(streamId, { 
 				finished: true,
@@ -372,6 +374,9 @@ class StudioController {
 			if(stream.rerun) {
                 await endRecord(egressId);
             }
+			const cacheKey = `all-coming-stream-${userId}`;
+			await redisClient.getInstance().del(cacheKey);
+			logger.info(`Clear cache with key: ${cacheKey}`);
 			return res.status(200).json({
 				stream
 			});
