@@ -397,6 +397,7 @@ class UserController {
             const streamer = await User.findById(streamerId);
             logger.info(`Call api check is mod with userId: ${userId}, streamerId: ${streamerId}`);
             const userIsMod = streamer.mods.some(mod => mod.user.toString() === userId);
+            logger.info(`Is mod: ${userIsMod}`);
             return res.status(200).json({ userIsMod })
         } catch (error) {
             next(error);
