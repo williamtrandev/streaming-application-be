@@ -34,11 +34,16 @@ class StudioController {
 			if (!data) {
 				return res.status(500).json({ message: "Failed to create stream" });
 			}
-			const base64Data = new Buffer.from(previewImage.replace(/^data:image\/\w+;base64,/, ""), 'base64');
-			const type = previewImage.split(';')[0].split('/')[1];
-			const imageKey = `${S3_PATH.STUDIO}/${data._id}.${type}`;
-			await putImageObject(imageKey, base64Data);
-			const contentType = `image/${type}`;
+			var imageKey = `${S3_PATH.STUDIO}/default-stream.png`;
+			var contentType = 'image/png';
+			if(previewImage) {
+				const base64Data = new Buffer.from(previewImage.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+				const type = previewImage.split(';')[0].split('/')[1];
+				imageKey = `${S3_PATH.STUDIO}/${data._id}.${type}`;
+				await putImageObject(imageKey, base64Data);
+				contentType = `image/${type}`;
+			}
+			
 			const updatedData = await Stream.findByIdAndUpdate(data._id, {
 				$set: { "s3.key": imageKey, "s3.contentType": contentType }
 			});
