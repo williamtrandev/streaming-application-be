@@ -124,6 +124,13 @@ class StudioController {
 			const logger = loggerWrapper("getDetailStream");
 			const { streamId } = req.params;
 			logger.info(`Start get detail stream api with streamId ${streamId}`);
+			const cacheKey = `detail-stream-${streamId}`;
+            const cachedData = await redisClient.getInstance().get(cacheKey);
+            if (cachedData) {
+                const data = JSON.parse(cachedData);
+                return res.status(200).json(data);
+            }
+            logger.info(`Miss cache with key: ${cacheKey}`);
 			const stream = await Stream.findById(streamId)
 				.populate({
 					path: 'user',
@@ -136,16 +143,16 @@ class StudioController {
 			}
 			const previewImage = await getObjectURL(stream?.s3?.key, stream?.s3?.contentType);
 			const numFollowers = await Follower.countDocuments({ streamer: stream.user._id });
+			stream.previewImage = previewImage;
 			stream.user.numFollowers = numFollowers;
 			stream.user.profilePicture = await getObjectURL(
 				stream.user.profilePictureS3.key,
 				stream.user.profilePictureS3.contentType
 			);
+			await redisClient.getInstance().setEx(cacheKey, 30, JSON.stringify(stream));
+            logger.info(`Set cache key ${cacheKey}`);
 			return res.status(200).json({
-				stream: {
-					...stream,
-					previewImage
-				}
+				stream
 			})
 		} catch (error) {
 			next(error);
