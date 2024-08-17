@@ -166,7 +166,7 @@ class StudioController {
 			const comingStreams = await Stream.find({
 				user: userId,
 				started: false
-			}).lean();
+			}).sort({ dateStream: -1 }).lean();
 			await redisClient.getInstance().setEx(cacheKey, 60, JSON.stringify(comingStreams));
 			logger.info(`Set cache key ${cacheKey}`);
 			return res.status(200).json({

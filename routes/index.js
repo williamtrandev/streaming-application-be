@@ -44,7 +44,7 @@ const route = (app) => {
 	// Middleware bắt lỗi 500
 	app.use((err, req, res, next) => {
 		logger.error(`Call api ${req.originalUrl} with error ${err.stack}`);
-		sendMessageToTelegram(`BE api [${req.originalUrl}] with error ${err.message}`);
+		// sendMessageToTelegram(`BE api [${req.originalUrl}] with error ${err.message}`);
 		res.status(500).json({
 			title: 'Lỗi',
 			content: '500 - Lỗi server',
