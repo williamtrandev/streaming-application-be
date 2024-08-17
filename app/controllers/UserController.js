@@ -22,16 +22,21 @@ class UserController {
             }
 
             const base64Data = new Buffer.from(profilePicture.replace(/^data:image\/\w+;base64,/, ""), 'base64');
-			const type = profilePicture.split(';')[0].split('/')[1];
-			const imageKey = `${S3_PATH.PROFILE_PICTURE}/${user._id}.${type}`;
-			await putImageObject(imageKey, base64Data);
-			const contentType = `image/${type}`;
+            const type = profilePicture.split(';')[0].split('/')[1];
+            const imageKey = `${S3_PATH.PROFILE_PICTURE}/${user._id}.${type}`;
+            await putImageObject(imageKey, base64Data);
+            const contentType = `image/${type}`;
             user.profilePictureS3 = {
                 key: imageKey,
                 contentType: contentType
             };
             await user.save();
             const preview = await getObjectURL(imageKey, contentType);
+
+            const cacheKey = `streamer-profile-${user.username}`;
+			await redisClient.getInstance().del(cacheKey);
+			logger.info(`Clear cache with key: ${cacheKey}`);
+
             return res.status(200).json({
                 newProfilePicture: preview,
                 message: "Change profile picture successfully"
@@ -54,16 +59,21 @@ class UserController {
             }
 
             const base64Data = new Buffer.from(profileBanner.replace(/^data:image\/\w+;base64,/, ""), 'base64');
-			const type = profileBanner.split(';')[0].split('/')[1];
-			const imageKey = `${S3_PATH.PROFILE_BANNER}/${user._id}.${type}`;
-			await putImageObject(imageKey, base64Data);
-			const contentType = `image/${type}`;
+            const type = profileBanner.split(';')[0].split('/')[1];
+            const imageKey = `${S3_PATH.PROFILE_BANNER}/${user._id}.${type}`;
+            await putImageObject(imageKey, base64Data);
+            const contentType = `image/${type}`;
             user.profileBannerS3 = {
                 key: imageKey,
                 contentType: contentType
             };
             await user.save();
             const preview = await getObjectURL(imageKey, contentType);
+
+            const cacheKey = `streamer-profile-${user.username}`;
+			await redisClient.getInstance().del(cacheKey);
+			logger.info(`Clear cache with key: ${cacheKey}`);
+
             return res.status(200).json({
                 newProfileBanner: preview,
                 message: "Change profile banner successfully"
@@ -89,6 +99,15 @@ class UserController {
             user.fullname = fullname;
             user.about = about;
             await user.save();
+
+            const cacheKey1 = `streamer-profile-${user.username}`;
+			await redisClient.getInstance().del(cacheKey1);
+			logger.info(`Clear cache with key: ${cacheKey1}`);
+
+            const cacheKey2 = `streamer-about-${user.username}`;
+			await redisClient.getInstance().del(cacheKey2);
+			logger.info(`Clear cache with key: ${cacheKey2}`);
+
             return res.status(200).json({
                 newUserInfo: {
                     fullname: user.fullname,
@@ -137,7 +156,7 @@ class UserController {
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
-            
+
             if (user?.profilePictureS3?.key) {
                 const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
                 user.profilePicture = profilePicture;
@@ -168,6 +187,11 @@ class UserController {
             }
             user.links = links;
             await user.save();
+
+            const cacheKey = `streamer-about-${user.username}`;
+			await redisClient.getInstance().del(cacheKey);
+			logger.info(`Clear cache with key: ${cacheKey}`);
+
             return res.status(200).json({
                 newLinks: links,
                 message: "Change user's social links successfully"
@@ -291,6 +315,13 @@ class UserController {
             const logger = loggerWrapper("getStreamerProfile");
             const { username } = req.params;
             logger.info(`Start get streamer's profile api with username ${username}`);
+            const cacheKey = `streamer-profile-${username}`;
+            const cachedData = await redisClient.getInstance().get(cacheKey);
+            if (cachedData) {
+                const data = JSON.parse(cachedData);
+                return res.status(200).json(data);
+            }
+            logger.info(`Miss cache with key: ${cacheKey}`);
             const user = await User.findOne({ username: username });
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
@@ -298,14 +329,17 @@ class UserController {
             const numFollowers = await Follower.countDocuments({ streamer: user._id });
             const profilePicture = await getObjectURL(user.profilePictureS3.key, user.profilePictureS3.contentType);
             const profileBanner = await getObjectURL(user.profileBannerS3.key, user.profileBannerS3.contentType);
-            return res.status(200).json({
+            const cachedStreamer = {
                 _id: user._id,
                 profilePicture: profilePicture,
                 profileBanner: profileBanner,
                 username: user.username,
                 fullname: user.fullname,
                 numFollowers: numFollowers
-            });
+            }
+            await redisClient.getInstance().setEx(cacheKey, 30, JSON.stringify(cachedStreamer));
+            logger.info(`Set cache key ${cacheKey}`);
+            return res.status(200).json(cachedStreamer);
         } catch (error) {
             next(error);
         }
@@ -316,15 +350,24 @@ class UserController {
             const logger = loggerWrapper("getStreamerAbout");
             const { username } = req.params;
             logger.info(`Start get streamer's about api with username ${username}`);
+            const cacheKey = `streamer-about-${username}`;
+            const cachedData = await redisClient.getInstance().get(cacheKey);
+            if (cachedData) {
+                const data = JSON.parse(cachedData);
+                return res.status(200).json(data);
+            }
+            logger.info(`Miss cache with key: ${cacheKey}`);
             const user = await User.findOne({ username: username });
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
-
-            return res.status(200).json({
+            const cachedAbout = {
                 about: user.about,
                 links: user.links
-            });
+            }
+            await redisClient.getInstance().setEx(cacheKey, 30, JSON.stringify(cachedAbout));
+            logger.info(`Set cache key ${cacheKey}`);
+            return res.status(200).json(cachedAbout);
         } catch (error) {
             next(error);
         }
