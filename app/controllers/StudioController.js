@@ -149,7 +149,7 @@ class StudioController {
 				stream.user.profilePictureS3.key,
 				stream.user.profilePictureS3.contentType
 			);
-			await redisClient.getInstance().setEx(cacheKey, 30, JSON.stringify(stream));
+			await redisClient.getInstance().setEx(cacheKey, 30, JSON.stringify({ stream }));
             logger.info(`Set cache key ${cacheKey}`);
 			return res.status(200).json({
 				stream
