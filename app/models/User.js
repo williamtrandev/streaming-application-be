@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { ROLE_MOD } from '../constants/index.js';
+import { ROLE_MOD, S3_PATH } from '../constants/index.js';
 
 const { Schema } = mongoose;
 
@@ -35,12 +35,24 @@ const UserSchema = new Schema({
 		required: true
 	},
 	profilePictureS3: {
-		key: String,
-		contentType: String
+		key: {
+			type: String,
+			default: `${S3_PATH.PROFILE_PICTURE}/default.png`
+		},
+		contentType: {
+			type: String,
+			default: 'image/png'
+		}
 	},
 	profileBannerS3: {
-		key: String,
-		contentType: String
+		key: {
+			type: String,
+			default: `${S3_PATH.PROFILE_BANNER}/default.jpeg`
+		},
+		contentType: {
+			type: String, 
+			default: 'image/jpeg'
+		}
 	},
 	about: {
 		type: String

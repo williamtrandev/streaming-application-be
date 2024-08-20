@@ -250,42 +250,48 @@ class StreamController {
     async getHomeStreams(req, res, next) {
         try {
             const logger = loggerWrapper("getHomeStreams");
-            const randomStreams = await Stream.aggregate([
-                { $match: { started: true, finished: false, isBanned: false } },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'user',
-                        foreignField: '_id',
-                        as: 'user',
-                        pipeline: [
-                            {
-                                $project: {
-                                    _id: 1,
-                                    username: 1,
-                                    fullname: 1,
-                                    profilePictureS3: 1 
+            var randomStreams = await Stream.find({
+                started: true,
+                finished: false,
+                isBanned: false
+            }).limit(12);
+            if (randomStreams.length < 12) {
+                const remainingCount = 12 - randomStreams.length;
+                const additionalStreams = await Stream.aggregate([
+                    {
+                        $match: {
+                            finished: false,
+                            isBanned: false,
+                            _id: { $nin: randomStreams.map(stream => stream._id) }
+                        }
+                    },
+                    {
+                        $lookup: {
+                            from: 'users',
+                            localField: 'user',
+                            foreignField: '_id',
+                            as: 'user',
+                            pipeline: [
+                                {
+                                    $project: {
+                                        _id: 1,
+                                        username: 1,
+                                        fullname: 1,
+                                        profilePictureS3: 1
+                                    }
                                 }
-                            }
-                        ]
-                    }
-                },
-                { $sample: { size: 12 } },
-                {
-                    $unwind: '$user'
-                }
-            ]);
-            for (const stream of randomStreams) {
-                stream.previewImage = await getObjectURL(
-                    stream.s3.key,
-                    stream.s3.contentType
-                );
-                stream.user.profilePicture = await getObjectURL(
-                    stream.user.profilePictureS3.key,
-                    stream.user.profilePictureS3.contentType
-                );
+                            ]
+                        }
+                    },
+                    { $sample: { size: remainingCount } }, 
+                    { $unwind: '$user' }
+                ]);
+                randomStreams = randomStreams.concat(additionalStreams);
             }
-
+            await Promise.all(randomStreams.map(async (stream) => {
+                stream.previewImage = await getObjectURL(stream.s3.key, stream.s3.contentType);
+                stream.user.profilePicture = await getObjectURL(stream.user.profilePictureS3.key, stream.user.profilePictureS3.contentType);
+            }));
             let followingStreams = [];
             let recommendStreams = [];
             const userId = req.query.userId;
@@ -315,19 +321,13 @@ class StreamController {
                     .limit(6)
                     .sort({ dateStream: -1 })
                     .lean();
-                for (const stream of followingStreams) {
-                    stream.previewImage = await getObjectURL(
-                        stream.s3.key,
-                        stream.s3.contentType
-                    );
-                    stream.user.profilePicture = await getObjectURL(
-                        stream.user.profilePictureS3.key,
-                        stream.user.profilePictureS3.contentType
-                    );
+                await Promise.all(followingStreams.map(async (stream) => {
+                    stream.previewImage = await getObjectURL(stream.s3.key, stream.s3.contentType);
+                    stream.user.profilePicture = await getObjectURL(stream.user.profilePictureS3.key, stream.user.profilePictureS3.contentType);
                     if (stream.finished) {
                         stream.duration = stream.finishAt - stream.startAt;
                     }
-                }
+                }));
 
                 const recentHistories = await History.aggregate([
                     { $match: { user: Types.ObjectId.createFromHexString(userId) } },
@@ -381,19 +381,13 @@ class StreamController {
                     }
                 ]);
 
-                for (const stream of recommendStreams) {
-                    stream.previewImage = await getObjectURL(
-                        stream.s3.key,
-                        stream.s3.contentType
-                    );
-                    stream.user.profilePicture = await getObjectURL(
-                        stream.user.profilePictureS3.key,
-                        stream.user.profilePictureS3.contentType
-                    );
+                await Promise.all(recommendStreams.map(async (stream) => {
+                    stream.previewImage = await getObjectURL(stream.s3.key, stream.s3.contentType);
+                    stream.user.profilePicture = await getObjectURL(stream.user.profilePictureS3.key, stream.user.profilePictureS3.contentType);
                     if (stream.finished) {
                         stream.duration = stream.finishAt - stream.startAt;
                     }
-                }
+                }));
 
                 let cachedStreams = {
                     randomStreams,
@@ -403,7 +397,6 @@ class StreamController {
                 await redisClient.getInstance().setEx(cacheKey, 30, JSON.stringify(cachedStreams));
                 logger.info(`Set cache key ${cacheKey}`);
             }
-
             return res.status(200).json({
                 randomStreams,
                 followingStreams,
