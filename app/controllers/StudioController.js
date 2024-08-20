@@ -287,7 +287,7 @@ class StudioController {
 					return { ...mod.toObject(), ...mod.user.toObject(), profilePictureS3 };
 				})
 			);
-			await redisClient.getInstance().setEx(cacheKey, 60 * 60 * 24, JSON.stringify(mods));
+			await redisClient.getInstance().setEx(cacheKey, 60, JSON.stringify(mods));
 			logger.info(`Set cache key ${cacheKey}`);
 			return res.status(200).json({ data: mods });
 		} catch (error) {
