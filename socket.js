@@ -164,6 +164,14 @@ const willSocket = (server) => {
 			}
 		});
 
+		socket.on("streamerEndStream", (streamId) => {
+			logger.info(`Start socket streamer end stream with streamId: ${streamId}`);
+			if (rooms[streamId]) {
+				const socketIdArray = Array.from(rooms[streamId]);
+				io.to(socketIdArray).emit("notifyEndStream");
+			}
+		})
+
 		socket.on('disconnect', async () => {
 			console.log(`Client disconnected: ${socket.id}`);
 			var streamId = null;
