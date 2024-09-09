@@ -226,12 +226,11 @@ class SearchController {
         try {
             const logger = loggerWrapper("searchSavedStream");
             const userId = req.user.userId;
-            const { key, page, date, numViews, numViewsLive } = req.query;
+            const { key, page, date, numViews } = req.query;
             logger.info(`Start search saved stream api for ${userId}, query ${req.query}`);
             const sorter = {
                 dateStream: parseInt(date),
-                numViews: parseInt(numViews),
-                numViewsLive: parseInt(numViewsLive)
+                numViews: parseInt(numViews)
             };
             const streams = await Stream.find({
                 user: userId,

@@ -25,7 +25,7 @@ class StreamController {
                 .lean();
             for (const stream of streams) {
                 stream.previewImage = await getObjectURL(stream.s3?.key, stream.s3?.contentType);
-                stream.duration = stream.finishAt - stream.startAt;
+                // stream.duration = stream.finishAt - stream.startAt;
             }
             return res.status(200).json({ streams });
         } catch (error) {

@@ -422,8 +422,10 @@ class StudioController {
 			logger.info(`Start get server url and stream key username ${username}, streamId ${streamId}`);
 			const ingress = await createIngress(streamId, username);
 
+			const fixUrl = ingress.url.slice(0, 4) + ingress.url.slice(5);
+
 			return res.status(200).json({
-				serverUrl: ingress.url,
+				serverUrl: fixUrl,
 				streamKey: ingress.streamKey
 			});
 		} catch (error) {
